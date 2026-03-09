@@ -4,17 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Skull King Scorer</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23010810'/%3E%3Cpath d='M50 15 C28 15 18 32 18 46 C18 58 24 66 34 70 L34 80 C34 83 37 85 40 85 L60 85 C63 85 66 83 66 80 L66 70 C76 66 82 58 82 46 C82 32 72 15 50 15Z' fill='%23e8a020'/%3E%3Ccircle cx='38' cy='47' r='9' fill='%23010810'/%3E%3Ccircle cx='62' cy='47' r='9' fill='%23010810'/%3E%3Crect x='38' y='74' width='6' height='12' rx='2' fill='%23010810'/%3E%3Crect x='47' y='74' width='6' height='12' rx='2' fill='%23010810'/%3E%3Crect x='56' y='74' width='6' height='12' rx='2' fill='%23010810'/%3E%3Cpath d='M41 63 L59 63' stroke='%23010810' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23010810'/%3E%3Cellipse cx='50' cy='41' rx='29' ry='27' fill='%23e8a020'/%3E%3Crect x='33' y='64' width='9' height='15' rx='3' fill='%23e8a020'/%3E%3Crect x='45.5' y='64' width='9' height='15' rx='3' fill='%23e8a020'/%3E%3Crect x='58' y='64' width='9' height='15' rx='3' fill='%23e8a020'/%3E%3Ccircle cx='39' cy='39' r='9' fill='%23010810'/%3E%3Ccircle cx='61' cy='39' r='9' fill='%23010810'/%3E%3Cpath d='M40 56 Q50 63 60 56' stroke='%23010810' stroke-width='3.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 
 :root {
   --gold: #e8a020; --gold-d: #b07818; --gold-l: #f5c84a;
-  --ember: #c0392b;
-  --cd: #0a0c10; --cm: #0d1520; --cl: #101c2a;
+  --ember: #8b2e2e; --danger: #7a1a1a; --ok: #0e9e70;  --cd: #0a0c10; --cm: #0d1520; --cl: #101c2a;
   --text: #e8d5a8; --dim: #7a6545;
-  --danger: #aa1f1f; --ok: #0e9e70;
+  --ember: #8b2e2e; --danger: #7a1a1a; --ok: #0e9e70;
   --r: 12px; --sh: 0 8px 32px rgba(0,0,0,.8);
   --step: rgba(0,0,0,.65); --step-h: rgba(0,0,0,.85);
 }
@@ -49,12 +48,33 @@ body::after {
 /* ─── GLOBAL BAR — HAMBURGER ─── */
 #global-bar {
   position: sticky; top: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: flex-end;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 7px 14px;
   background: linear-gradient(90deg, rgba(1,5,13,.98) 0%, rgba(1,8,16,.98) 100%);
   border-bottom: 2px solid rgba(232,160,32,.3);
   box-shadow: 0 4px 24px rgba(0,0,0,.9);
   backdrop-filter: blur(8px);
+}
+#gb-info {
+  display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; flex: 1;
+}
+#gb-logo {
+  flex-shrink: 0; width: 30px; height: 30px; opacity: .9;
+}
+#gb-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#gb-progress {
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+}
+#gb-pip-wrap { display: flex; gap: 4px; align-items: center; }
+.gb-pip {
+  width: 10px; height: 5px; border-radius: 3px;
+  background: rgba(232,160,32,.18); transition: background .3s;
+}
+.gb-pip.done { background: var(--gold-d); }
+.gb-pip.active { background: var(--gold); box-shadow: 0 0 7px rgba(232,160,32,.6); }
+#gb-meta {
+  font-family: 'Cinzel', serif; font-size: .74rem; color: var(--text);
+  white-space: nowrap; letter-spacing: .2px; opacity: .8;
 }
 #hbg-wrap { position: relative; }
 #hbg-btn {
@@ -106,6 +126,8 @@ body::after {
   transition: opacity .25s ease, transform .28s cubic-bezier(.34,1.4,.64,1);
 }
 .mo.open .mb { opacity: 1; transform: none; }
+/* Confirm modal always renders on top of other modals */
+#mc { z-index: 400; }
 
 /* ─── SCREENS ─── */
 .screen { position: relative; z-index: 1; padding: 20px 16px 48px; max-width: 1440px; margin: 0 auto; }
@@ -134,13 +156,71 @@ label {
   font-family: 'Cinzel', serif; font-size: .68rem; color: var(--dim);
   display: block; margin-bottom: 3px; letter-spacing: .4px; font-weight: 700;
 }
-input[type=text], input[type=number], select {
+input[type=text], input[type=number] {
   background: rgba(1,5,12,.8); border: 2px solid rgba(232,160,32,.25);
   border-radius: 6px; color: var(--text); padding: 7px 10px;
   font-family: 'Crimson Text', serif; font-size: .95rem; width: 100%; transition: border-color .2s;
 }
-input:focus, select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 8px rgba(232,160,32,.2); }
-select option { background: #01080f; }
+input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 8px rgba(232,160,32,.2); }
+select, select.ar-select {
+  appearance: none; -webkit-appearance: none;
+  background-color: rgba(1,5,12,.85);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23e8a020' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px !important;
+  border: 2px solid rgba(232,160,32,.3); border-radius: 7px;
+  color: var(--text); font-family: 'Cinzel', serif; font-size: .82rem;
+  cursor: pointer; transition: border-color .2s, background-color .2s;
+}
+select:hover { border-color: var(--gold); background-color: rgba(232,160,32,.08); }
+select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 8px rgba(232,160,32,.2); }
+select option {
+  background: #06111e; color: var(--text); padding: 8px 12px;
+  font-family: 'Cinzel', serif;
+}
+select option:hover, select option:focus, select option:checked {
+  background: rgba(232,160,32,.2); color: var(--gold);
+}
+/* ─── CUSTOM DROPDOWN (butin panel) ─── */
+.cdd {
+  position: relative; flex: 1; min-width: 90px; user-select: none;
+}
+.cdd-btn {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  width: 100%; padding: 6px 10px; cursor: pointer;
+  background: rgba(1,5,12,.85); border: 2px solid rgba(232,160,32,.3); border-radius: 7px;
+  color: var(--text); font-family: 'Cinzel', serif; font-size: .82rem;
+  transition: border-color .2s, background .2s;
+}
+.cdd-btn:hover, .cdd.open .cdd-btn {
+  border-color: var(--gold); background: rgba(232,160,32,.08); color: var(--gold);
+}
+.cdd-chevron {
+  width: 10px; height: 10px; flex-shrink: 0; transition: transform .2s;
+}
+.cdd.open .cdd-chevron { transform: rotate(180deg); }
+.cdd-list {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 500;
+  background: linear-gradient(160deg, #0d0500 0%, #041224 100%);
+  border: 2px solid rgba(232,160,32,.4); border-radius: 9px;
+  box-shadow: 0 12px 36px rgba(0,0,0,.9); overflow: hidden;
+  max-height: 0; opacity: 0; pointer-events: none;
+  transition: max-height .25s cubic-bezier(.4,0,.2,1), opacity .18s ease;
+}
+.cdd.open .cdd-list {
+  max-height: 240px; opacity: 1; pointer-events: auto;
+}
+.cdd-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 13px; cursor: pointer;
+  font-family: 'Cinzel', serif; font-size: .82rem; color: var(--text);
+  transition: background .15s, color .15s; border-bottom: 1px solid rgba(232,160,32,.07);
+}
+.cdd-item:last-child { border-bottom: none; }
+.cdd-item:hover { background: rgba(232,160,32,.12); color: var(--gold); }
+.cdd-item.selected { background: rgba(232,160,32,.18); color: var(--gold); font-weight: 700; }
+.cdd-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 /* ─── BUTTONS ─── */
 .btn {
@@ -151,13 +231,15 @@ select option { background: #01080f; }
   color: #1a0a00; cursor: pointer; letter-spacing: .4px;
   transition: all .2s; white-space: nowrap;
 }
-.btn:hover { background: linear-gradient(135deg, var(--ember) 0%, #cc3000 100%); border-color: var(--ember); color: #fff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,69,0,.4); }
-.btn:active { transform: none; }
+.btn:hover { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-d) 100%); border-color: var(--gold-d); color: #1a0a00; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(232,160,32,.3); }
+.btn-g:hover { background: rgba(232,160,32,.22); border-color: rgba(232,160,32,.6); color: var(--gold); transform: translateY(-1px); }
+.btn-d { background: linear-gradient(135deg,#6b1f1f 0%,#4a1010 100%); border-color: #6b1f1f; color: #f5caca; }
+.btn-d:hover { background: linear-gradient(135deg,#7e2525 0%,#5c1414 100%); border-color: #7e2525; color: #fff; transform: translateY(-1px); }.btn:active { transform: none; }
 .btn-sm { padding: 7px 13px; font-size: .78rem; border-radius: 6px; }
-.btn-d { background: linear-gradient(135deg,#cc2222 0%,#990000 100%); border-color: #cc2222; color: #fff; }
-.btn-d:hover { background: linear-gradient(135deg,#ff3333 0%,#cc0000 100%); }
+.btn-d:hover { background: linear-gradient(135deg,#7e2525 0%,#5c1414 100%); border-color: #7e2525; color: #fff; transform: translateY(-1px); }
 .btn-g { background: transparent; border-color: rgba(232,160,32,.3); color: var(--gold); }
 .btn-g:hover { background: rgba(232,160,32,.1); border-color: var(--gold); }
+#btn-manche-suiv:hover { background: linear-gradient(135deg,var(--gold) 0%,var(--gold-d) 100%) !important; border-color: var(--gold-d) !important; color: #1a0a00 !important; }
 
 /* ─── STEPPERS ─── */
 /* border is inset on the element → overflow:hidden clips children to border-radius,
@@ -201,36 +283,71 @@ select option { background: #01080f; }
 /* ─── HOME ─── */
 #hs { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
 .hc { flex: 1; min-width: 278px; }
-#pis { display: flex; flex-direction: column; gap: 7px; margin-bottom: 11px; }
-.pir { display: flex; gap: 7px; align-items: center; }
-.pir input { flex: 1; }
+#pis {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px; margin-bottom: 11px;
+}
+@media (min-width: 600px) {
+  #pis.cols-2 { grid-template-columns: 1fr 1fr; }
+}
+.pir { display: flex; gap: 7px; align-items: stretch; }
+.pir input { flex: 1; min-width: 0; height: 36px; }
+.pir .btn { height: 36px; padding-top: 0; padding-bottom: 0; align-items: center; display: inline-flex; flex-shrink: 0; }
+#home-actions { display: flex; gap: 7px; margin-bottom: 13px; align-items: center; flex-wrap: wrap; }
+#btn-add-player { flex-shrink: 0; }
+#btn-appareiller { flex: 1; min-width: 130px; justify-content: center; }
 #sl { display: flex; flex-direction: column; gap: 8px; }
 .si {
-  display: flex; align-items: center; gap: 9px; padding: 11px 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto;
+  align-items: center;
+  gap: 9px; padding: 11px 14px;
   background: rgba(0,8,17,.5); border: 2px solid rgba(232,160,32,.15);
   border-radius: 10px; transition: .2s; cursor: pointer;
 }
+.si.si-has-footer { grid-template-rows: auto auto; }
 .si:hover { border-color: var(--gold); background: rgba(232,160,32,.05); }
-.si-inf { flex: 1; }
-.si-n { font-family: 'Cinzel', serif; font-weight: 600; font-size: .92rem; color: var(--gold); }
+.si.si-done { border-color: rgba(232,160,32,.1); opacity: .8; }
+.si.si-done:hover { border-color: rgba(232,160,32,.35); opacity: 1; }
+.si-inf { min-width: 0; }
+.si-actions { display: flex; gap: 7px; align-items: center; flex-shrink: 0; justify-content: flex-end; }
+.si-actions .btn { height: 36px; padding-top: 0; padding-bottom: 0; display: inline-flex; align-items: center; white-space: nowrap; }
+.si-footer { grid-column: 1 / -1; }
+.si-n { font-family: 'Cinzel', serif; font-weight: 600; font-size: .92rem; color: var(--gold); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .si-m { font-size: .82rem; color: var(--text); opacity:.7; margin-top: 3px; font-style: italic; }
+.si-badge-done {
+  font-family: 'Cinzel', serif; font-size: .62rem; font-weight: 700; letter-spacing: .4px;
+  padding: 1px 7px; border-radius: 4px;
+  background: rgba(232,160,32,.15); color: var(--gold); border: 1px solid rgba(232,160,32,.3);
+}
+#sl::-webkit-scrollbar { display: none; }
+#sl { scrollbar-width: none; -ms-overflow-style: none; }
+.ss-scroll-btn {
+  background: rgba(232,160,32,.1); border: 1.5px solid rgba(232,160,32,.25);
+  color: var(--gold); border-radius: 8px; padding: 5px 16px; cursor: pointer;
+  transition: background .2s, border-color .2s; font-size: 0; line-height: 0;
+}
+.ss-scroll-btn:hover { background: rgba(232,160,32,.2); border-color: var(--gold); }
 
 /* ─── COMPTE HEADER ─── */
 #ch {
   display: flex; flex-wrap: wrap; gap: 9px; align-items: stretch;
+  justify-content: space-between;
   margin-bottom: 14px; padding: 10px 13px;
   background: rgba(1,5,12,.75); border: 2px solid rgba(232,160,32,.18); border-radius: var(--r);
 }
 #ch select { width: auto; min-width: 88px; }
-#ri { font-family: 'Cinzel', serif; font-size: .84rem; font-weight: 600; color: var(--gold); flex: 1; align-self: center; }
 
 /* ─── BUTIN BAR ─── */
 .bb {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 7px 13px; background: rgba(16,185,129,.08);
-  border: 2px solid rgba(16,185,129,.3); border-radius: 10px; margin-bottom: 12px;
+  padding: 7px 13px;
+  background: linear-gradient(90deg, rgba(232,160,32,.07) 0%, rgba(180,120,24,.04) 100%);
+  border: 1.5px solid rgba(232,160,32,.3); border-radius: 10px; margin-bottom: 12px;
 }
-.bbl { font-family: 'Cinzel', serif; font-size: .74rem; font-weight: 700; color: #6ee7b7; white-space: nowrap; }
+.bbl { font-family: 'Cinzel', serif; font-size: .74rem; font-weight: 700; color: var(--gold); white-space: nowrap; }
 
 /* ─── CARDS GRID ─── */
 #cg {
@@ -249,7 +366,7 @@ select option { background: #01080f; }
 }
 .pc:hover { transform: scale(1.02); box-shadow: var(--sh), 0 0 20px rgba(232,160,32,.18); }
 .pc.dragging { opacity: .45; cursor: grabbing; }
-.pc.dov { border-color: var(--ember); box-shadow: 0 0 20px rgba(255,69,0,.5); }
+.pc.dov { border-color: var(--gold-d); box-shadow: 0 0 20px rgba(232,160,32,.3); }
 .pch {
   display: flex; align-items: center; justify-content: space-between;
   padding: 7px 10px 5px; border-bottom: 2px solid rgba(232,160,32,.15);
@@ -279,7 +396,7 @@ select option { background: #01080f; }
 
 /* Alliance info — only shows border when it has content */
 .ai {
-  margin-top: 5px; font-size: .72rem; color: #6ee7b7;
+  margin-top: 5px; font-size: .72rem; color: var(--gold-l);
 }
 .ai.has-alliances {
   padding: 5px 8px;
@@ -288,11 +405,6 @@ select option { background: #01080f; }
 }
 
 /* Past round warning */
-.past-warn {
-  font-family: 'Cinzel', serif; font-size: .67rem; color: #fbbf24;
-  background: rgba(251,191,36,.08); border-bottom: 2px solid rgba(251,191,36,.2);
-  padding: 4px 10px; letter-spacing: .3px;
-}
 /* Bonus collapsible */
 
 /* Card footer */
@@ -378,9 +490,19 @@ select option { background: #01080f; }
 }
 
 /* Nav prev/next buttons — match select height exactly */
-#ch .nav-group { display: flex; align-items: stretch; gap: 7px; }
+#ch .nav-group { display: flex; align-items: stretch; gap: 7px; flex-wrap: wrap; }
 #ch .nav-group .btn { padding-top: 0; padding-bottom: 0; align-self: stretch; }
-#ch .nav-group select { align-self: stretch; }
+#ch .nav-group .cdd { align-self: stretch; }
+.ch-actions { display: flex; align-items: stretch; gap: 4px; }
+.manche-cdd { min-width: 120px; }
+.manche-cdd .cdd-btn { height: 100%; justify-content: space-between; gap: 10px; padding: 0 12px; }
+.manche-cdd .cdd-label { font-family: 'Cinzel', serif; font-size: .83rem; font-weight: 700; white-space: nowrap; }
+.manche-cdd .cdd-list { min-width: 150px; }
+.manche-cdd .cdd-item { justify-content: space-between; }
+.manche-cdd .cdd-item .cdd-badge {
+  font-size: .68rem; padding: 1px 6px; border-radius: 4px;
+  background: rgba(232,160,32,.15); color: var(--gold); font-family: 'Cinzel', serif;
+}
 
 /* Bonus input — editable field inside stepper */
 .bonus-input {
@@ -449,6 +571,16 @@ tr:first-child td { background: rgba(232,160,32,.07); }
 
 <!-- GLOBAL BAR — HAMBURGER -->
 <div id="global-bar">
+  <!-- Left: game info (hidden on home) -->
+  <div id="gb-info" class="gb-game hidden">
+    <svg id="gb-logo" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="var(--gold)" opacity=".9"><path d="M256 31.203c-96 .797-117.377 76.692-79.434 135.133-6.397 6.534-10.344 15.886-.566 25.664 16 16 32 16 39.852 32.42h80.296C304 208 320 208 336 192c9.778-9.778 5.831-19.13-.566-25.664C373.377 107.896 352 32 256 31.203zm-42.146 101.049c.426-.003.862.007 1.306.03 28.404 1.442 40.84 59.718-10.83 51.095-10.412-1.738-17.355-50.963 9.524-51.125zm84.292 0c26.88.162 19.936 49.387 9.524 51.125C256 192 268.436 133.724 296.84 132.28c.444-.022.88-.032 1.306-.03zM32 144c7.406 88.586 64.475 175.544 156.623 236.797 17.959-7.251 35.767-15.322 50.424-23.877C180.254 319.737 104.939 255.465 32 144zm448 0C359.2 328.605 231.863 383.797 183.908 400.797c3.177 5.374 5.997 10.98 8.711 16.432 3.878 7.789 7.581 15.251 11.184 20.986A517.457 517.457 0 0 0 256 417.973l.168.076a884.617 884.617 0 0 0 9.652-4.65C391.488 353.263 471.156 249.79 480 144zm-224 27.725l20.074 40.15L256 199.328l-20.074 12.547L256 171.725zm-65.604 57.11l15.76 51.042s31.268 24.92 49.844 24.92 49.844-24.92 49.844-24.92l15.76-51.041-27.086 19.236-8.063 16.248S267.35 279.547 256 279.547c-11.35 0-30.455-15.227-30.455-15.227l-8.063-16.248-27.086-19.236zm-59.984 152.976c-.783-.02-1.574-.011-2.375.027l.856 17.978c6.36-.302 10.814 2.416 16.11 8.64 5.298 6.222 10.32 15.707 15.24 25.589 4.918 9.882 9.707 20.12 16.122 28.45 6.415 8.327 16.202 15.446 27.969 13.89l-2.36-17.844c-4.094.541-6.78-1.099-11.349-7.031-4.57-5.933-9.275-15.46-14.268-25.489-4.992-10.029-10.297-20.604-17.644-29.234-6.888-8.09-16.556-14.686-28.3-14.976zm251.176 0c-11.745.29-21.413 6.885-28.3 14.976-7.348 8.63-12.653 19.205-17.645 29.234-4.993 10.03-9.698 19.556-14.268 25.489-4.57 5.932-7.255 7.572-11.35 7.031l-2.359 17.844c11.767 1.556 21.554-5.563 27.969-13.89 6.415-8.33 11.204-18.568 16.123-28.45 4.919-9.882 9.94-19.367 15.238-25.59 5.297-6.223 9.75-8.941 16.111-8.639l.856-17.978a32.853 32.853 0 0 0-2.375-.027zm-55.928 18.107c-13.97 10.003-30.13 18.92-47.424 27.478a524.868 524.868 0 0 0 29.961 10.819c3.603-5.735 7.306-13.197 11.184-20.986 2.714-5.453 5.534-11.058 8.71-16.432-.77-.273-1.62-.586-2.43-.879zm-191.808 23.371l-27.67 10.352 7.904 31.771 36.424-11.707c-1.418-2.814-2.81-5.649-4.207-8.457-4.048-8.131-8.169-15.961-12.451-21.959zm244.296 0c-4.282 5.998-8.403 13.828-12.45 21.959-1.399 2.808-2.79 5.643-4.208 8.457l36.424 11.707 7.904-31.771-27.67-10.352zM78.271 435.438a9.632 9.632 0 0 0-1.32.12 6.824 6.824 0 0 0-1.217.313c-11.544 4.201-25.105 18.04-21.648 29.828 3.07 10.472 19.675 13.359 30.492 11.916 3.828-.51 8.415-3.761 12.234-7.086l-8.124-32.648c-3.238-1.285-7.214-2.528-10.417-2.443zm355.458 0c-3.203-.085-7.179 1.158-10.416 2.443l-8.125 32.648c3.819 3.325 8.406 6.576 12.234 7.086 10.817 1.443 27.422-1.444 30.492-11.916 3.457-11.788-10.104-25.627-21.648-29.828a6.824 6.824 0 0 0-1.217-.312 9.632 9.632 0 0 0-1.32-.122z"/></svg>
+    <div id="gb-text">
+      <div id="gb-progress">
+        <div id="gb-pip-wrap"></div>
+        <span id="gb-meta"></span>
+      </div>
+    </div>
+  </div>
   <div id="hbg-wrap" class="gb-game hidden">
     <button id="hbg-btn" onclick="toggleHamburger()" aria-label="Menu" title="Menu">
       <span></span><span></span><span></span>
@@ -460,12 +592,8 @@ tr:first-child td { background: rgba(232,160,32,.07); }
       </button>
       <div class="hbg-sep"></div>
       <button class="hbg-item" onclick="closeHamburger();recommencer()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1v2"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         Recommencer
-      </button>
-      <button class="hbg-item danger" onclick="closeHamburger();quitter()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Quitter
       </button>
     </div>
   </div>
@@ -488,14 +616,17 @@ tr:first-child td { background: rgba(232,160,32,.07); }
 <!-- MODAL ADD PLAYER -->
 <div id="map" class="mo hidden">
   <div class="mb">
-    <h2>Ajouter un nouveau joueur</h2>
+    <h2>Recruter un marin</h2>
+    <p style="font-family:'Crimson Text',serif;font-style:italic;font-size:.97rem;color:var(--text);opacity:.85;margin:0 0 14px;line-height:1.5">
+      Tout équipage a besoin d'un matelot de plus.<br>Quel intrépide pirate monte à bord ?
+    </p>
     <div class="mf">
-      <label>Nom du joueur</label>
-      <input type="text" id="npn" placeholder="Ex: Pierre" maxlength="24" onkeydown="if(event.key==='Enter')confirmAddPlayer()">
+      <label>Nom du corsaire</label>
+      <input type="text" id="npn" placeholder="Ex: Jack Sparrow" maxlength="24" onkeydown="if(event.key==='Enter')confirmAddPlayer()">
     </div>
     <div class="ma">
-      <button class="btn btn-g" onclick="closeAddPlayer()">Annuler</button>
-      <button class="btn" onclick="confirmAddPlayer()">Ajouter</button>
+      <button class="btn btn-g" onclick="closeAddPlayer()">Déserter</button>
+      <button class="btn" onclick="confirmAddPlayer()">Embarquer !</button>
     </div>
   </div>
 </div>
@@ -509,17 +640,22 @@ tr:first-child td { background: rgba(232,160,32,.07); }
   <div id="hs">
     <div class="hc">
       <div class="sc">
-        <h2><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="21"/><path d="M5 15H2a10 10 0 0020 0h-3"/></svg>Nouvelle Partie</h2>
+        <h2><svg width="15" height="15" viewBox="0 0 32 32" fill="currentColor" style="vertical-align:middle;margin-right:6px"><path d="M31.907 22.857l-2.571-4.728c-0.004-0.006-0.003-0.012-0.007-0.019l-0.183-0.317c-0.102-0.175-0.264-0.288-0.444-0.331-0.178-0.044-0.375-0.017-0.544 0.093l-0.308 0.198c-0.006 0.003-0.010 0.009-0.016 0.013l-4.55 3.073c-0.34 0.219-0.451 0.677-0.248 1.029l0.204 0.225c0.203 0.349 0.665 0.364 1.005 0.145l2.72-1.849c-0.644 5.188-4.835 9.168-9.968 9.631v-20.050h4.002c0.552 0 1-0.448 1-1s-0.448-1-1-1h-4.045c-0.008-0.026-0.014-0.052-0.024-0.077 1.785-0.415 3.115-2.011 3.115-3.923 0-2.227-1.805-4.032-4.032-4.032s-4.031 1.804-4.031 4.032c0 1.901 1.316 3.489 3.085 3.915-0.011 0.027-0.018 0.056-0.027 0.085h-4.043c-0.552 0-1 0.448-1 1s0.448 1 1 1h3.999v20.049c-5.13-0.462-9.318-4.441-9.963-9.629l2.717 1.848c0.34 0.219 0.802 0.204 1.005-0.145l0.205-0.225c0.203-0.351 0.092-0.809-0.248-1.028l-4.55-3.072c-0.006-0.005-0.010-0.010-0.015-0.013l-0.308-0.198c-0.169-0.11-0.365-0.136-0.544-0.093s-0.341 0.156-0.443 0.331l-0.183 0.317c-0.003 0.006-0.003 0.012-0.007 0.019l-2.571 4.728c-0.203 0.349-0.092 0.808 0.248 1.028l0.285 0.107c0.34 0.218 0.758 0.020 0.961-0.329l1.497-2.78c0.918 6.398 6.41 11.182 12.915 11.182 6.502 0 11.998-4.784 12.918-11.178l1.495 2.777c0.203 0.349 0.622 0.548 0.962 0.329l0.285-0.107c0.34-0.22 0.452-0.679 0.248-1.028zM13.985 3.968c0-1.12 0.911-2.032 2.031-2.032s2.032 0.911 2.032 2.032-0.911 2.032-2.032 2.032c-1.12-0-2.031-0.912-2.031-2.031z"/></svg>Lever l'ancre</h2>
         <div style="margin-bottom:13px">
           <label>Nombre de manches (1–10)</label>
-          <input type="number" id="nbm" min="1" max="10" value="10">
+          <div class="stepper" style="width:100%">
+            <button class="sb" onclick="stepNbm(-1)">−</button>
+            <span class="sv" id="nbm-display" style="flex:1">10</span>
+            <button class="sb" onclick="stepNbm(1)">+</button>
+          </div>
+          <input type="hidden" id="nbm" value="10">
         </div>
-        <h2><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Joueurs (2–10)</h2>
+        <h2><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Équipage (2–10)</h2>
         <div id="pis"></div>
-        <div style="display:flex;gap:7px;margin-bottom:13px">
-          <button class="btn btn-g btn-sm" onclick="addPI()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter un joueur</button>
+        <div id="home-actions">
+          <button id="btn-add-player" class="btn btn-g btn-sm" style="white-space:nowrap" onclick="addPI()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter un pirate</button>
+          <button id="btn-appareiller" class="btn btn-sm" onclick="startNewGame()"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px;flex-shrink:0"><path fill-rule="nonzero" d="M17.457 3L21 3.003l.002 3.523-5.467 5.466 2.828 2.829 1.415-1.414 1.414 1.414-2.474 2.475 2.828 2.829-1.414 1.414-2.829-2.829-2.475 2.475-1.414-1.414 1.414-1.415-2.829-2.828-2.828 2.828 1.415 1.415-1.414 1.414-2.475-2.475-2.829 2.829-1.414-1.414 2.829-2.83-2.475-2.474 1.414-1.414 1.414 1.413 2.827-2.828-5.46-5.46L3 3l3.546.003 5.453 5.454L17.457 3zm-7.58 10.406L7.05 16.234l.708.707 2.827-2.828-.707-.707zm9.124-8.405h-.717l-4.87 4.869.706.707 4.881-4.879v-.697zm-14 0v.7l11.241 11.241.707-.707L5.716 5.002l-.715-.001z"/></svg><span style="white-space:nowrap">Appareiller !</span></button>
         </div>
-        <button class="btn" style="width:100%" onclick="startNewGame()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/></svg> Nouvelle Partie</button>
       </div>
     </div>
     <div class="hc">
@@ -538,14 +674,38 @@ tr:first-child td { background: rgba(232,160,32,.07); }
 
   <div id="ch">
     <div class="nav-group">
-      <button class="btn btn-g btn-sm" onclick="prevRound()" title="Manche précédente"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></svg></button>
-      <select id="rs" onchange="loadRound(+this.value)"></select>
-      <button class="btn btn-g btn-sm" onclick="nextRound()" title="Manche suivante"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"/></svg></button>
+      <button id="btn-prev" class="btn btn-g btn-sm" onclick="prevRound()" title="Manche précédente"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></svg></button>
+      <div id="rs-cdd" class="cdd manche-cdd">
+        <div class="cdd-btn" onclick="cddToggle('rs-cdd')">
+          <span class="cdd-label">Manche 1</span>
+          <svg class="cdd-chevron" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l5 5 5-5"/></svg>
+        </div>
+        <div class="cdd-list" id="rs-list"></div>
+      </div>
+      <button id="btn-next-nav" class="btn btn-g btn-sm" onclick="nextRoundNav()" title="Manche suivante"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"/></svg></button>
+      <button id="btn-retour" class="btn btn-sm hidden" style="background:linear-gradient(135deg,var(--gold),#d4a000);color:#1a0a00;border-color:var(--gold-d);white-space:nowrap" onclick="loadRound(state.maxReached)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"/><polyline points="3,18 9,12 3,6"/></svg> En cours
+      </button>
     </div>
-    <div id="ri">Manche 1</div>
-    <button class="btn btn-g btn-sm" onclick="openAddPlayer()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Joueur</button>
-    <button class="btn btn-g btn-sm" id="btn-expand" onclick="toggleBonusFields()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg> Bonus</button>
-    <button class="btn btn-g btn-sm" id="btn-split" onclick="toggleSplitView()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> Classement</button>
+    <div class="ch-actions">
+      <button class="btn btn-g btn-sm" onclick="openAddPlayer()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Joueur</button>
+      <button class="btn btn-g btn-sm" id="btn-expand" onclick="toggleBonusFields()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="2" y="2" width="20" height="20" rx="4"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg> Bonus</button>
+      <button class="btn btn-g btn-sm" id="btn-split" onclick="toggleSplitView()"><svg width="13" height="13" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M32,160V456a8,8,0,0,0,8,8H176V160a16,16,0,0,0-16-16H48A16,16,0,0,0,32,160Z"/><path d="M320,48H192a16,16,0,0,0-16,16V464H336V64A16,16,0,0,0,320,48Z"/><path d="M464,208H352a16,16,0,0,0-16,16V464H472a8,8,0,0,0,8-8V224A16,16,0,0,0,464,208Z"/></svg> Live</button>
+    </div>
+  </div>
+
+  <!-- ALERTE MANCHE PASSÉE -->
+  <div id="past-alert" class="hidden" style="
+    display:flex; align-items:center; gap:9px;
+    margin-bottom:14px; padding:9px 14px;
+    background: linear-gradient(90deg, rgba(232,160,32,.08) 0%, rgba(232,160,32,.04) 100%);
+    border: 1.5px solid rgba(232,160,32,.35); border-radius: 9px;
+    font-family:'Cinzel',serif; font-size:.78rem; font-weight:600;
+    color: var(--gold); letter-spacing:.3px;
+    box-shadow: 0 2px 12px rgba(232,160,32,.08);
+  ">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.9"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Manche passée — toute modification recalcule automatiquement les cumuls suivants
   </div>
 
   <!-- SIDE PANEL (inline, below header) -->
@@ -563,7 +723,7 @@ tr:first-child td { background: rgba(232,160,32,.07); }
   </div>
 
   <div class="bb">
-    <span class="bbl"><svg viewBox="0 0 512 512" width="18" height="18" fill="none" stroke="var(--gold)" stroke-linecap="round" stroke-linejoin="round" stroke-width="20" style="vertical-align:middle;margin-right:6px"><rect height="104.29" width="192" x="160" y="249.85"/><path d="M239.57,249.85h32.87a.15.15,0,0,1,.15.15v31.85A16.58,16.58,0,0,1,256,298.44h0a16.58,16.58,0,0,1-16.58-16.58V250A.15.15,0,0,1,239.57,249.85Z"/><path d="M201,157.85H311a41,41,0,0,1,41,41v0a0,0,0,0,1,0,0H160a0,0,0,0,1,0,0v0A41,41,0,0,1,201,157.85Z"/><line x1="352" x2="329.5" y1="198.85" y2="249.85"/><line x1="160" x2="182.5" y1="198.85" y2="249.85"/></svg>Butins :</span>
+    <span class="bbl"><svg viewBox="0 0 512 512" width="22" height="22" fill="none" stroke="var(--gold)" stroke-linecap="round" stroke-linejoin="round" stroke-width="20" style="vertical-align:middle;margin-right:6px"><rect height="104.29" width="192" x="160" y="249.85"/><path d="M239.57,249.85h32.87a.15.15,0,0,1,.15.15v31.85A16.58,16.58,0,0,1,256,298.44h0a16.58,16.58,0,0,1-16.58-16.58V250A.15.15,0,0,1,239.57,249.85Z"/><path d="M201,157.85H311a41,41,0,0,1,41,41v0a0,0,0,0,1,0,0H160a0,0,0,0,1,0,0v0A41,41,0,0,1,201,157.85Z"/><line x1="352" x2="329.5" y1="198.85" y2="249.85"/><line x1="160" x2="182.5" y1="198.85" y2="249.85"/></svg>Butins :</span>
     <div class="stepper">
       <button class="sb" onclick="stepButin(-1)">−</button>
       <span class="sv" id="bc">0</span>
@@ -573,9 +733,12 @@ tr:first-child td { background: rgba(232,160,32,.07); }
   </div>
 
   <!-- INLINE ALLIANCE COLLAPSE -->
-  <div id="alliance-panel" class="hidden" style="
-    background:rgba(16,185,129,.06); border:1.5px solid rgba(16,185,129,.28);
-    border-radius:10px; padding:10px 13px; margin-bottom:12px;">
+  <div id="alliance-panel" style="
+    background: linear-gradient(135deg, rgba(44,24,6,.7) 0%, rgba(10,28,50,.6) 100%);
+    border: 1.5px solid rgba(232,160,32,.25);
+    border-radius: 10px; padding: 10px 13px; margin-bottom: 12px;
+    overflow: hidden; max-height: 0; opacity: 0;
+    transition: max-height .3s ease, opacity .25s ease, padding .3s ease, margin .3s ease;">
     <div id="alliance-rows"></div>
   </div>
 
@@ -583,14 +746,18 @@ tr:first-child td { background: rgba(232,160,32,.07); }
   <div id="cg"></div>
 
   <div id="ca">
-    <button class="btn" onclick="saveRound()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> Sauvegarder</button>
-    <button class="btn btn-g" onclick="showClassement()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="8,21 12,17 16,21"/><line x1="12" y1="17" x2="12" y2="11"/><path d="M7 4h10l-1 7a5 5 0 01-8 0L7 4z"/><path d="M5 4H3v3a4 4 0 003.5 3.97"/><path d="M19 4h2v3a4 4 0 01-3.5 3.97"/></svg> Classement</button>
+    <button id="btn-manche-suiv" class="btn" onclick="nextRound()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="9,18 15,12 9,6"/><polyline points="3,18 9,12 3,6"/></svg> Manche suivante
+    </button>
+    <button class="btn btn-g" onclick="showClassement()"><svg width="14" height="14" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M32,160V456a8,8,0,0,0,8,8H176V160a16,16,0,0,0-16-16H48A16,16,0,0,0,32,160Z"/><path d="M320,48H192a16,16,0,0,0-16,16V464H336V64A16,16,0,0,0,320,48Z"/><path d="M464,208H352a16,16,0,0,0-16,16V464H472a8,8,0,0,0,8-8V224A16,16,0,0,0,464,208Z"/></svg> Classement</button>
+    <button class="btn btn-d" onclick="terminerPartie()"><svg width="14" height="14" viewBox="0 0 512 512" fill="currentColor" style="vertical-align:middle"><path d="M256 31.203c-96 .797-117.377 76.692-79.434 135.133-6.397 6.534-10.344 15.886-.566 25.664 16 16 32 16 39.852 32.42h80.296C304 208 320 208 336 192c9.778-9.778 5.831-19.13-.566-25.664C373.377 107.896 352 32 256 31.203zm-42.146 101.049c.426-.003.862.007 1.306.03 28.404 1.442 40.84 59.718-10.83 51.095-10.412-1.738-17.355-50.963 9.524-51.125zm84.292 0c26.88.162 19.936 49.387 9.524 51.125C256 192 268.436 133.724 296.84 132.28c.444-.022.88-.032 1.306-.03zM32 144c7.406 88.586 64.475 175.544 156.623 236.797 17.959-7.251 35.767-15.322 50.424-23.877C180.254 319.737 104.939 255.465 32 144zm448 0C359.2 328.605 231.863 383.797 183.908 400.797c3.177 5.374 5.997 10.98 8.711 16.432 3.878 7.789 7.581 15.251 11.184 20.986A517.457 517.457 0 0 0 256 417.973l.168.076a884.617 884.617 0 0 0 9.652-4.65C391.488 353.263 471.156 249.79 480 144zm-224 27.725l20.074 40.15L256 199.328l-20.074 12.547L256 171.725zm-65.604 57.11l15.76 51.042s31.268 24.92 49.844 24.92 49.844-24.92 49.844-24.92l15.76-51.041-27.086 19.236-8.063 16.248S267.35 279.547 256 279.547c-11.35 0-30.455-15.227-30.455-15.227l-8.063-16.248-27.086-19.236z"/></svg> Terminer</button>
   </div>
 </div>
 
 <!-- ══════════ CLASSEMENT ══════════ -->
 <div id="classement" class="screen hidden">
-  <h1 class="title" style="font-size:clamp(1.1rem,3vw,1.8rem);margin-bottom:13px">Classement</h1>
+  <h1 class="title" style="font-size:clamp(1.1rem,3vw,1.8rem);margin-bottom:6px">Classement</h1>
+  <div id="cla-info" style="text-align:center;font-family:'Crimson Text',serif;font-style:italic;font-size:.95rem;color:var(--dim);margin-bottom:14px"></div>
   <div id="winner-banner" class="hidden"></div>
   <div id="ctw">
     <table><thead><tr><th>Rang</th><th>Joueur</th><th>Score</th></tr></thead>
@@ -598,7 +765,7 @@ tr:first-child td { background: rgba(232,160,32,.07); }
   </div>
   <div id="cw2"><canvas id="sc2"></canvas></div>
   <div id="cla">
-    <button class="btn btn-g" onclick="showScreen('compte')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="15,18 9,12 15,6"/></svg> Retour</button>
+    <button class="btn btn-g" onclick="backFromClassement()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="15,18 9,12 15,6"/></svg> Retour</button>
   </div>
 </div>
 
@@ -681,7 +848,7 @@ const BOUNDS = {
   pirate:     () => ({ min:0, max:7 }),
   sk:         () => ({ min:0, max:1 }),
   sirene:     () => ({ min:0, max:2 }),
-  leviathan:  () => ({ min:0, max:10 }),
+  leviathan:  () => ({ min:0, max:3 }),
   got7:       () => ({ min:0, max:4 }),
   got8:       () => ({ min:0, max:4 }),
   got14color: () => ({ min:0, max:3 }),
@@ -701,8 +868,8 @@ function toggleSplitView() {
   splitView = !splitView;
   document.getElementById("side-panel").classList.toggle("open", splitView);
   const btn = document.getElementById("btn-split");
-  const ico = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>`;
-  if (btn) btn.innerHTML = splitView ? ico+" Masquer" : ico+" Classement";
+  const ico = `<svg width="13" height="13" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M32,160V456a8,8,0,0,0,8,8H176V160a16,16,0,0,0-16-16H48A16,16,0,0,0,32,160Z"/><path d="M320,48H192a16,16,0,0,0-16,16V464H336V64A16,16,0,0,0,320,48Z"/><path d="M464,208H352a16,16,0,0,0-16,16V464H472a8,8,0,0,0,8-8V224A16,16,0,0,0,464,208Z"/></svg>`;
+  if (btn) btn.innerHTML = splitView ? ico+" Masquer" : ico+" Live";
   if (splitView) renderSidePanel();
 }
 
@@ -813,11 +980,29 @@ function showScreen(id) {
   document.getElementById('home').classList.toggle('hidden', !( id === 'home'));
   document.getElementById('compte-col').classList.toggle('hidden', !isCompte);
   document.getElementById('classement').classList.toggle('hidden', id !== 'classement');
-  // Show hamburger everywhere except home
   const onHome = (id === 'home');
-  document.querySelector('#hbg-wrap').classList.toggle('hidden', onHome);
+  document.querySelectorAll('.gb-game').forEach(b => b.classList.toggle('hidden', onHome));
   if (id === 'home') { closeHamburger(); listSessions(); }
   if (id === 'classement') renderClassement();
+}
+
+function updateGbInfo() {
+  if (!state) return;
+  const metaEl  = document.getElementById('gb-meta');
+  const pipWrap = document.getElementById('gb-pip-wrap');
+  if (!metaEl) return;
+
+  const cur = state.currentRound, total = state.config.manches;
+  const nj  = state.playerOrder.length;
+  metaEl.textContent = `M${cur}/${total} · ${nj} joueur${nj > 1 ? 's' : ''}`;
+
+  // Pips (max 16)
+  const display = Math.min(total, 16);
+  pipWrap.innerHTML = Array.from({length: display}, (_, i) => {
+    const mn = i + 1;
+    const cls = mn < cur ? 'done' : mn === cur ? 'active' : '';
+    return `<span class="gb-pip ${cls}" title="Manche ${mn}"></span>`;
+  }).join('');
 }
 
 function sched() { clearTimeout(asTimer); asTimer = setTimeout(() => { if (state) saveGame(); }, 300); }
@@ -837,6 +1022,7 @@ function closeHamburger() {
 }
 document.addEventListener('click', e => {
   if (!document.getElementById('hbg-wrap').contains(e.target)) closeHamburger();
+  if (!e.target.closest('.cdd')) document.querySelectorAll('.cdd.open').forEach(d => d.classList.remove('open'));
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -846,8 +1032,13 @@ function openConfirm(title, msg, fn, okLabel='Confirmer') {
   document.getElementById('mc-t').textContent = title;
   document.getElementById('mc-m').innerHTML = msg;
   const ok = document.getElementById('mc-ok');
-  ok.textContent = okLabel;
-  ok.onclick = () => { closeConfirm(); fn(); };
+  if (fn) {
+    ok.textContent = okLabel;
+    ok.style.display = '';
+    ok.onclick = () => { closeConfirm(); fn(); };
+  } else {
+    ok.style.display = 'none';
+  }
   const el = document.getElementById('mc');
   el.classList.remove('hidden');
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
@@ -855,7 +1046,10 @@ function openConfirm(title, msg, fn, okLabel='Confirmer') {
 function closeConfirm() {
   const el = document.getElementById('mc');
   el.classList.remove('open');
-  setTimeout(() => el.classList.add('hidden'), 250);
+  setTimeout(() => {
+    el.classList.add('hidden');
+    document.getElementById('mc-ok').style.display = '';
+  }, 250);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -885,8 +1079,30 @@ function confirmAddPlayer() {
 // ──────────────────────────────────────────────────────────────
 function toggleAlliancePanel() {
   const p = document.getElementById('alliance-panel');
-  p.classList.toggle('hidden');
-  if (!p.classList.contains('hidden')) renderAlliancePanel();
+  const btn = document.getElementById('bea');
+  const isOpen = p._apOpen;
+  const editIco = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+  const closeIco = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  if (isOpen) {
+    p.style.maxHeight = '0';
+    p.style.opacity = '0';
+    p.style.padding = '0 13px';
+    p.style.marginBottom = '0';
+    p.style.overflow = 'hidden';
+    p._apOpen = false;
+    if (btn) btn.innerHTML = editIco + ' Gérer';
+  } else {
+    renderAlliancePanel();
+    p.style.padding = '10px 13px';
+    p.style.marginBottom = '12px';
+    p.style.overflow = 'hidden';
+    p.style.maxHeight = '600px';
+    p.style.opacity = '1';
+    p._apOpen = true;
+    if (btn) btn.innerHTML = closeIco + ' Fermer';
+    // After transition ends, set overflow visible so dropdowns aren't clipped
+    setTimeout(() => { if (p._apOpen) p.style.overflow = 'visible'; }, 320);
+  }
 }
 
 function renderAlliancePanel() {
@@ -897,7 +1113,7 @@ function renderAlliancePanel() {
   container.innerHTML = '';
 
   if (!butins.length) {
-    container.innerHTML = '<p style="color:#6ee7b7;font-family:\'Cinzel\',serif;font-size:.76rem">Aucun butin — utilisez + pour en ajouter.</p>';
+    container.innerHTML = '<p style="color:var(--dim);font-family:\'Cinzel\',serif;font-size:.76rem;font-style:italic">Aucun butin — utilisez + pour en ajouter.</p>';
     return;
   }
 
@@ -905,21 +1121,54 @@ function renderAlliancePanel() {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap';
 
-    const opA = state.players.map(p =>
-      `<option value="${p.id}" ${p.id===b.playerA?'selected':''}>${pLabel(p.id)}</option>`
-    ).join('');
-    const opB = state.players.map(p =>
-      `<option value="${p.id}" ${p.id===b.playerB?'selected':''}>${pLabel(p.id)}</option>`
-    ).join('');
+    const makeDropdown = (side, selectedId) => {
+      const ddId = `cdd-${idx}-${side}`;
+      const selPlayer = state.players.find(p => p.id === selectedId) || state.players[0];
+      const selColor = selPlayer ? pColor(selPlayer.id) : 'var(--gold)';
+      const selLabel = selPlayer ? pLabel(selPlayer.id) : '—';
+
+      const items = state.players.map(p => `
+        <div class="cdd-item ${p.id===selectedId?'selected':''}" onclick="cddPick('${ddId}',${idx},'${side}','${p.id}',this)">
+          <span class="cdd-dot" style="background:${pColor(p.id)}"></span>
+          ${pLabel(p.id)}
+        </div>`).join('');
+
+      return `<div class="cdd" id="${ddId}">
+        <div class="cdd-btn" onclick="cddToggle('${ddId}')">
+          <span style="display:flex;align-items:center;gap:6px">
+            <span class="cdd-dot" style="background:${selColor}"></span>
+            <span class="cdd-label">${selLabel}</span>
+          </span>
+          <svg class="cdd-chevron" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l5 5 5-5"/></svg>
+        </div>
+        <div class="cdd-list">${items}</div>
+      </div>`;
+    };
 
     row.innerHTML = `
-      <span style="font-family:'Cinzel',serif;font-size:.74rem;font-weight:700;color:#10b981;white-space:nowrap">Butin ${idx+1}</span>
-      <select style="width:auto;flex:1;min-width:80px;font-size:.85rem" onchange="setAllianceSide(${idx},'playerA',this.value)">${opA}</select>
-      <span style="font-family:'Cinzel',serif;font-size:.72rem;color:var(--dim)">avec</span>
-      <select style="width:auto;flex:1;min-width:80px;font-size:.85rem" onchange="setAllianceSide(${idx},'playerB',this.value)">${opB}</select>
-      <button class="btn btn-d btn-sm" style="padding:3px 8px;flex-shrink:0" onclick="removeAlliance(${idx})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+      <span style="font-family:'Cinzel',serif;font-size:.74rem;font-weight:700;color:var(--gold);white-space:nowrap;opacity:.8">Butin ${idx+1}</span>
+      ${makeDropdown('playerA', b.playerA)}
+      <span style="font-family:'Cinzel',serif;font-size:.72rem;color:var(--dim);flex-shrink:0">avec</span>
+      ${makeDropdown('playerB', b.playerB)}
+      <button class="btn btn-d btn-sm" style="padding:3px 8px;flex-shrink:0" onclick="removeAlliance(${idx})">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>`;
     container.appendChild(row);
   });
+}
+
+function cddToggle(id) {
+  const dd = document.getElementById(id);
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  // Close all other dropdowns first
+  document.querySelectorAll('.cdd.open').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+  dd.classList.toggle('open', !isOpen);
+}
+
+function cddPick(ddId, idx, side, playerId, itemEl) {
+  // Update state — renderAlliancePanel (called by setAllianceSide) will rebuild the dropdowns
+  setAllianceSide(idx, side, playerId);
 }
 
 function setAllianceSide(idx, side, val) {
@@ -935,6 +1184,7 @@ function setAllianceSide(idx, side, val) {
   manche.butins[idx][side] = val;
   recalcManche();
   renderAllianceInfoOnCards();
+  renderAlliancePanel(); // ← re-render so dropdown label + selected state update
   sched();
 }
 
@@ -956,9 +1206,9 @@ function calcScore(data, N, allJoueurs=[]) {
   const i = v => parseInt(v) || 0;
   const mise = i(data.mise), plis = i(data.plis);
   const pirate = Math.min(i(data.pirate), 7);
-  const sk = Math.min(i(data.sk), 1);
+  const sk_v = Math.min(i(data.sk), 1);
   const sirene = Math.min(i(data.sirene), 2);
-  const lev = Math.min(i(data.leviathan), 10);
+  const lev = Math.min(i(data.leviathan), 3);
   // backward-compat: booleans from old saves
   const got8 = typeof data.got8==='boolean' ? (data.got8?1:0) : Math.min(i(data.got8), 4);
   const got7 = typeof data.got7==='boolean' ? (data.got7?1:0) : Math.min(i(data.got7), 4);
@@ -981,31 +1231,36 @@ function calcScore(data, N, allJoueurs=[]) {
   else if (mise>=1 && plis===mise) base = 20*plis;      // mise réussie
   else base = -10*Math.abs(mise-plis);                  // mise ratée
 
-  // Bonus
+  // Bonus — uniquement si mise réussie ; si mise=0/plis=0 : seul le bonus manuel est conservé
   let bon = 0;
   if (ok) {
-    bon += pirate*20 + sk*40 + sirene*30 + lev*20;
-    bon += got8*5 - got7*5;
-    bon += g14c*10 + g14b*20 + bonus;
+    if (mise === 0 && plis === 0) {
+      // Bid zéro réussi : seul le bonus manuel compte (pas de bonus spéciaux de cartes)
+      bon += bonus;
+    } else {
+      bon += pirate*30 + sk_v*40 + sirene*20 + lev*20;
+      bon += got8*5 - got7*5;
+      bon += g14c*10 + g14b*20 + bonus;
+    }
 
-    // Alliance bonus : +20 par alliance SEULEMENT si les 2 joueurs ont rempli leur contrat
+    // Alliance bonus : +20 chacun SEULEMENT si les 2 joueurs ont rempli leur contrat
+    // Calcul indépendant pour chaque alliance (multi-butins supporté)
     const butins = data.butins || [];
     const pid = data.id;
-    if (pid) {
+    if (pid && ok) {
       butins.forEach(a => {
         if (a.playerA===pid || a.playerB===pid) {
           const partnerId = a.playerA===pid ? a.playerB : a.playerA;
           const partner = allJoueurs.find(j => j.id===partnerId);
-          // If partner data available, check their bid; if not (pure calc), grant bonus
-          if (!partner || bidOk(partner)) bon += 20;
+          if (partner && bidOk(partner)) bon += 20;  // A OK + B OK → +20 ; sinon 0
         }
       });
     }
   }
 
-  // Rascal
+  // Rascal: only applies for non-zero bids (ignored entirely when mise=0)
   let rv = 0;
-  if (rascal!==null && !isNaN(rascal)) rv = ok ? rascal : -rascal;
+  if (rascal!==null && !isNaN(rascal) && mise > 0) rv = ok ? rascal : -rascal;
 
   return base + bon + rv;
 }
@@ -1037,31 +1292,274 @@ function recalcCumuls(from) {
 // ──────────────────────────────────────────────────────────────
 function sk(id) { return 'skull_session_'+id; }
 
+function getSessionPodium(s) {
+  // Returns top-3 [{pid, nom, color, score}] from a finished session
+  const manches = s.config ? s.config.manches : 0;
+  if (!manches || !s.cumuls || !s.playerOrder) return [];
+  const li = (s.maxReached || manches) - 1;
+  const raw = s.playerOrder.map(pid => ({
+    pid, color: (s.players.find(p=>p.id===pid)||{}).color || '#888',
+    nom: (s.players.find(p=>p.id===pid)||{}).nom || '?',
+    score: s.cumuls[pid] ? (s.cumuls[pid][li]||0) : 0
+  })).sort((a,b)=>b.score-a.score);
+  // Assign ranks (ties share rank)
+  let rank = 1;
+  for (let i=0;i<raw.length;i++) {
+    if (i>0 && raw[i].score < raw[i-1].score) rank = i+1;
+    raw[i].rank = rank;
+  }
+  return raw.filter(p=>p.rank<=3).slice(0,3);
+}
+
+function makePodiumHTML(s) {
+  const top = getSessionPodium(s);
+  if (!top.length) return '';
+  const medals = ['🥇','🥈','🥉'];
+  return `<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">` +
+    top.map(p => `<span style="font-family:'Cinzel',serif;font-size:.72rem;background:rgba(0,0,0,.3);border:1px solid rgba(232,160,32,.15);border-radius:6px;padding:2px 7px;display:flex;align-items:center;gap:4px">
+      <span style="font-size:.8rem">${medals[p.rank-1]||''}</span>
+      <span style="width:7px;height:7px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block"></span>
+      <span style="color:var(--text);opacity:.9">${p.nom}</span>
+      <span style="color:var(--gold);font-weight:700">${p.score>0?'+':''}${p.score}</span>
+    </span>`).join('') + `</div>`;
+}
+
+function makeRankingFootbar(s) {
+  const all = getSessionPodium(s);
+  // getSessionPodium returns top 3, but we want all players ranked
+  const manches = s.config ? s.config.manches : 0;
+  if (!manches || !s.cumuls || !s.playerOrder) return '';
+  const li = (s.maxReached || manches) - 1;
+  const raw = s.playerOrder.map(pid => ({
+    pid, color: (s.players.find(p=>p.id===pid)||{}).color || '#888',
+    nom: (s.players.find(p=>p.id===pid)||{}).nom || '?',
+    score: s.cumuls[pid] ? (s.cumuls[pid][li]||0) : 0
+  })).sort((a,b)=>b.score-a.score);
+  let rank = 1;
+  for (let i=0;i<raw.length;i++) {
+    if (i>0 && raw[i].score < raw[i-1].score) rank = i+1;
+    raw[i].rank = rank;
+  }
+  const podiumSVG = `<svg width="10" height="10" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0"><path d="M32,160V456a8,8,0,0,0,8,8H176V160a16,16,0,0,0-16-16H48A16,16,0,0,0,32,160Z"/><path d="M320,48H192a16,16,0,0,0-16,16V464H336V64A16,16,0,0,0,320,48Z"/><path d="M464,208H352a16,16,0,0,0-16,16V464H472a8,8,0,0,0,8-8V224A16,16,0,0,0,464,208Z"/></svg>`;
+  const rankColors = {1:'var(--gold)',2:'#c0c0c0',3:'#cd7f32'};
+  return `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+    <span style="color:var(--gold);flex-shrink:0">${podiumSVG}</span>
+    ${raw.map(p => `<span style="display:inline-flex;align-items:center;gap:3px;font-family:'Cinzel',serif;font-size:.68rem;background:rgba(0,0,0,.3);border:1px solid rgba(232,160,32,.1);border-radius:5px;padding:1px 6px;white-space:nowrap">
+      <span style="font-weight:700;color:${rankColors[p.rank]||'var(--dim)'}">${p.rank}</span>
+      <span style="width:6px;height:6px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block"></span>
+      <span style="color:var(--text);opacity:.9">${p.nom}</span>
+      <span style="color:${p.score>=0?'var(--gold)':'#f87171'};font-weight:700">${p.score>0?'+':''}${p.score}</span>
+    </span>`).join('')}
+  </div>`;
+}
+
 function listSessions() {
   const list = document.getElementById('sl');
+  const cw   = document.getElementById('cw');
   list.innerHTML = '';
+  cw.innerHTML   = '';
   const ss = getAllSessions();
+
   if (!ss.length) {
     list.innerHTML = '<p style="color:var(--dim);font-style:italic;font-size:.87rem">Aucune partie sauvegardée</p>';
+    return;
   }
-  ss.sort((a,b) => (b.createdAt||b.updatedAt||'').localeCompare(a.createdAt||a.updatedAt||'')).forEach(s => {
+
+  const sorted   = ss.sort((a,b) => (b.createdAt||b.updatedAt||'').localeCompare(a.createdAt||a.updatedAt||''));
+  const active   = sorted.filter(s => !s.done);
+  const finished = sorted.filter(s => s.done);
+
+  const podiumSVG = `<svg width="12" height="12" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M32,160V456a8,8,0,0,0,8,8H176V160a16,16,0,0,0-16-16H48A16,16,0,0,0,32,160Z"/><path d="M320,48H192a16,16,0,0,0-16,16V464H336V64A16,16,0,0,0,320,48Z"/><path d="M464,208H352a16,16,0,0,0-16,16V464H472a8,8,0,0,0,8-8V224A16,16,0,0,0,464,208Z"/></svg>`;
+
+  const makeItem = (s, isFinished) => {
     const el = document.createElement('div');
-    el.className = 'si';
+    el.className = 'si' + (isFinished ? ' si-done si-has-footer' : '');
+    const date = new Date(s.updatedAt).toLocaleDateString('fr-FR');
+    const progress = isFinished
+      ? `<span class="si-badge-done">Terminée</span>`
+      : `<span style="color:var(--dim);font-size:.72rem">Manche ${s.currentRound||1}/${s.config.manches}</span>`;
+    const btnLabel = isFinished ? `${podiumSVG} Résultats` : `${ico('play',12)} Reprendre`;
+    const action = isFinished ? `loadFinished('${s.id}')` : `loadSession('${s.id}')`;
     el.innerHTML = `
       <div class="si-inf">
-        <div class="si-n">${s.name} <span style="color:var(--dim);font-size:.72rem">(manche ${s.currentRound||1}/${s.config.manches})</span></div>
-        <div class="si-m">${s.players.length} joueurs · ${new Date(s.updatedAt).toLocaleDateString('fr-FR')}</div>
+        <div class="si-n">${s.name} ${progress}</div>
+        <div class="si-m">${s.players.length} joueurs · ${date}</div>
       </div>
-      <button class="btn btn-sm" onclick="loadSession('${s.id}');event.stopPropagation()">${ico('play',12)} Jouer</button>
-      <button class="btn btn-d btn-sm" onclick="deleteSession('${s.id}');event.stopPropagation()">${ico('trash',12)}</button>`;
-    el.onclick = () => loadSession(s.id);
-    list.appendChild(el);
+      <div class="si-actions">
+        <button class="btn btn-sm" onclick="${action};event.stopPropagation()">${btnLabel}</button>
+        <button class="btn btn-d btn-sm" onclick="deleteSession('${s.id}');event.stopPropagation()">${ico('trash',12)}</button>
+      </div>
+      ${isFinished ? `<div class="si-footer" style="padding-top:9px;border-top:1px solid rgba(232,160,32,.18);background:rgba(0,0,0,.18);border-radius:6px;padding:8px 10px">${makeRankingFootbar(s)}</div>` : ''}`;
+    el.onclick = () => isFinished ? loadFinished(s.id) : loadSession(s.id);
+    return el;
+  };
+
+  if (active.length) {
+    active.forEach(s => list.appendChild(makeItem(s, false)));
+  } else {
+    const noActive = document.createElement('p');
+    noActive.style.cssText = 'color:var(--dim);font-style:italic;font-size:.87rem;margin-bottom:6px';
+    noActive.textContent = 'Aucune partie en cours';
+    list.appendChild(noActive);
+  }
+
+  if (finished.length) {
+    const sep = document.createElement('div');
+    sep.innerHTML = `<div style="font-family:'Cinzel',serif;font-size:.72rem;font-weight:700;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;margin:14px 0 8px;display:flex;align-items:center;gap:8px"><span style="flex:1;height:1px;background:rgba(232,160,32,.15)"></span>Historique<span style="flex:1;height:1px;background:rgba(232,160,32,.15)"></span></div>`;
+    list.appendChild(sep);
+
+    const recent = finished.slice(0, 3);
+    const older  = finished.slice(3);
+    recent.forEach(s => list.appendChild(makeItem(s, true)));
+
+    if (older.length) {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-g btn-sm';
+      btn.style.cssText = 'margin-top:8px;width:100%';
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><polyline points="12,8 12,12 14,14"/></svg> Anciennes parties (${older.length})`;
+      btn.onclick = () => openOlderModal(older);
+      list.appendChild(btn);
+    }
+  }
+
+  requestAnimationFrame(() => setupSessionScroll());
+}
+
+function openOlderModal(sessions) {
+  // Build or reuse modal
+  let mo = document.getElementById('older-mo');
+  if (!mo) {
+    mo = document.createElement('div');
+    mo.id = 'older-mo';
+    mo.className = 'mo hidden';
+    mo.innerHTML = `<div class="mb" style="max-width:520px;width:95%">
+      <h2 style="display:flex;justify-content:space-between;align-items:center">
+        Anciennes parties
+        <button class="btn btn-g btn-sm" onclick="closeOlderModal()" style="margin-left:10px">✕</button>
+      </h2>
+      <div id="older-list" style="overflow-y:auto;max-height:55vh;scrollbar-width:none;-ms-overflow-style:none;margin:10px 0"></div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:10px">
+        <button class="btn btn-g btn-sm ss-scroll-btn" onclick="document.getElementById('older-list').scrollBy({top:-120,behavior:'smooth'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18,15 12,9 6,15"/></svg></button>
+        <button class="btn btn-g btn-sm ss-scroll-btn" onclick="document.getElementById('older-list').scrollBy({top:120,behavior:'smooth'})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6,9 12,15 18,9"/></svg></button>
+      </div>
+      <button class="btn btn-d" style="width:100%" onclick="confirmDeleteOld()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle"><polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1v2"/></svg>
+        Supprimer les anciennes parties
+      </button>
+    </div>`;
+    document.body.appendChild(mo);
+    mo.addEventListener('click', e => { if (e.target === mo) closeOlderModal(); });
+  }
+
+  const podiumSVG = `<svg width="12" height="12" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M32,160V456a8,8,0,0,0,8,8H176V160a16,16,0,0,0-16-16H48A16,16,0,0,0,32,160Z"/><path d="M320,48H192a16,16,0,0,0-16,16V464H336V64A16,16,0,0,0,320,48Z"/><path d="M464,208H352a16,16,0,0,0-16,16V464H472a8,8,0,0,0,8-8V224A16,16,0,0,0,464,208Z"/></svg>`;
+  const container = document.getElementById('older-list');
+  container.innerHTML = '';
+  sessions.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'si si-done si-has-footer';
+    el.style.marginBottom = '7px';
+    const date = new Date(s.updatedAt).toLocaleDateString('fr-FR');
+    el.innerHTML = `
+      <div class="si-inf">
+        <div class="si-n">${s.name} <span class="si-badge-done">Terminée</span></div>
+        <div class="si-m">${s.players.length} joueurs · ${date}</div>
+      </div>
+      <div class="si-actions">
+        <button class="btn btn-sm" onclick="closeOlderModal();loadFinished('${s.id}')">${podiumSVG} Résultats</button>
+        <button class="btn btn-d btn-sm" onclick="deleteSession('${s.id}');this.closest('.si').remove()">${ico('trash',12)}</button>
+      </div>
+      <div class="si-footer" style="padding-top:9px;border-top:1px solid rgba(232,160,32,.18);background:rgba(0,0,0,.18);border-radius:6px;padding:8px 10px">${makeRankingFootbar(s)}</div>`;
+    el.onclick = e => { if (e.target.tagName !== 'BUTTON') { closeOlderModal(); loadFinished(s.id); }};
+    container.appendChild(el);
   });
-  const cw = document.getElementById('cw');
-  const act = ss.find(s => s.current);
-  cw.innerHTML = act
-    ? `<button class="btn" style="width:100%" onclick="loadSession('${act.id}')">${ico('play',14)} Continuer — ${act.name}</button>`
-    : '';
+
+  mo.classList.remove('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => mo.classList.add('open')));
+}
+
+function closeOlderModal() {
+  const mo = document.getElementById('older-mo');
+  if (!mo) return;
+  mo.classList.remove('open');
+  setTimeout(() => mo.classList.add('hidden'), 250);
+}
+
+function confirmDeleteOld() {
+  openConfirm(
+    '⚓ Supprimer les archives ?',
+    `Les <strong>10 parties les plus récentes</strong> seront conservées dans les abysses de la mémoire.<br><br>
+     <em style="color:var(--text);opacity:.8;font-size:.9em">Les plus anciennes disparaîtront pour toujours dans les profondeurs.</em>`,
+    () => {
+      const ss = getAllSessions().sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+      ss.slice(10).forEach(s => localStorage.removeItem(sk(s.id)));
+      closeOlderModal();
+      listSessions();
+      notify('Archives purgées — les 10 dernières parties conservées.');
+    },
+    'Envoyer au fond'
+  );
+}
+
+function setupSessionScroll() {
+  const sc = document.getElementById('sc'); // sessions card container
+  const list = document.getElementById('sl');
+  if (!list || !sc) return;
+
+  // Remove old scroll buttons if any
+  ['ss-up','ss-dn'].forEach(id => { const el = document.getElementById(id); if (el) el.remove(); });
+
+  const card = list.closest('.sc');
+  if (!card) return;
+
+  const cardRect  = card.getBoundingClientRect();
+  const spaceLeft = window.innerHeight - cardRect.bottom;
+  const threshold = window.innerHeight * 0.10;
+
+  if (spaceLeft < threshold && list.scrollHeight > list.clientHeight + 10) {
+    // Make list scrollable
+    list.style.overflowY = 'auto';
+    list.style.scrollbarWidth = 'none';
+    list.style.msOverflowStyle = 'none';
+    list.style.setProperty('-webkit-overflow-scrolling', 'touch');
+    const maxH = window.innerHeight - cardRect.top - 160;
+    list.style.maxHeight = Math.max(180, maxH) + 'px';
+
+    // Up button
+    const up = document.createElement('button');
+    up.id = 'ss-up';
+    up.className = 'ss-scroll-btn';
+    up.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18,15 12,9 6,15"/></svg>`;
+    up.onclick = () => list.scrollBy({ top: -120, behavior: 'smooth' });
+
+    // Down button
+    const dn = document.createElement('button');
+    dn.id = 'ss-dn';
+    dn.className = 'ss-scroll-btn';
+    dn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"/></svg>`;
+    dn.onclick = () => list.scrollBy({ top: 120, behavior: 'smooth' });
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:6px;justify-content:center;margin-top:8px';
+    wrap.append(up, dn);
+    list.parentNode.insertBefore(wrap, list.nextSibling);
+  } else {
+    list.style.maxHeight = '';
+    list.style.overflowY = '';
+  }
+}
+
+function loadFinished(id) {
+  const raw = localStorage.getItem(sk(id));
+  if (!raw) { notify('Session introuvable'); return; }
+  state = JSON.parse(raw);
+  state.current = true;
+  // Migrate
+  state.players.forEach((p,i) => { if (!p.color) p.color = PCOLORS[i % PCOLORS.length]; });
+  state.manches.forEach(m => {
+    if (!m.butins) m.butins = [];
+  });
+  saveGame();
+  showScreen('classement');
 }
 
 function getAllSessions() {
@@ -1120,9 +1618,26 @@ function deleteSession(id) {
 // ──────────────────────────────────────────────────────────────
 //  NEW GAME
 // ──────────────────────────────────────────────────────────────
+function stepNbm(delta) {
+  const inp = document.getElementById('nbm');
+  const disp = document.getElementById('nbm-display');
+  let v = (parseInt(inp.value) || 10) + delta;
+  v = Math.max(1, Math.min(10, v));
+  inp.value = v;
+  if (disp) disp.textContent = v;
+}
+
+function updatePisLayout() {
+  const pis = document.getElementById('pis');
+  if (!pis) return;
+  const count = pis.querySelectorAll('.pir').length;
+  const wide = window.innerWidth >= 600;
+  pis.classList.toggle('cols-2', count > 5 && wide);
+}
+
 function addPI() {
   const c = document.getElementById('pis');
-  if (c.children.length >= 10) { alert('Maximum 10 joueurs'); return; }
+  if (c.children.length >= 10) return;
   const row = document.createElement('div'); row.className = 'pir';
   row.innerHTML = `<input type="text" placeholder="" class="pin">
     <button class="btn btn-d btn-sm" onclick="this.closest('.pir').remove();renumberPI()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
@@ -1131,21 +1646,32 @@ function addPI() {
 }
 
 function renumberPI() {
-  document.querySelectorAll('#pis .pin').forEach((inp, i) => {
-    if (!inp.value) inp.placeholder = `Joueur ${i+1}`;
-  });
+  const rows = document.querySelectorAll('#pis .pin');
+  rows.forEach((inp, i) => { if (!inp.value) inp.placeholder = `Joueur ${i+1}`; });
+  const btn = document.getElementById('btn-add-player');
+  if (btn) btn.classList.toggle('hidden', rows.length >= 10);
+  updatePisLayout();
 }
 
 function startNewGame() {
   const manches = parseInt(document.getElementById('nbm').value)||10;
-  if (manches<1||manches>10) { alert('Nombre de manches invalide (1–10)'); return; }
+  if (manches<1||manches>10) {
+    openConfirm('Manches invalides', `<em style="font-family:'Crimson Text',serif;font-size:1rem;line-height:1.7">Le nombre de manches doit être compris entre <strong style="color:var(--gold)">1</strong> et <strong style="color:var(--gold)">10</strong>, matelot — les mers ne permettent pas plus !</em>`, null);
+    return;
+  }
 
   const names = [];
   document.querySelectorAll('.pin').forEach(inp => {
     const v = inp.value.trim(); if (v && !names.includes(v)) names.push(v);
   });
-  if (names.length < 2) { alert('Il faut au minimum 2 joueurs !'); return; }
-  if (names.length > 10) { alert('Maximum 10 joueurs'); return; }
+  if (names.length < 2) {
+    openConfirm('Équipage insuffisant !', `<em style="font-family:'Crimson Text',serif;font-size:1rem;line-height:1.7">Un seul pirate ne peut pas tenir la barre et hisser les voiles à la fois !<br><br>Recrutez au moins <strong style="color:var(--gold)">2 corsaires</strong> avant d'appareiller — les mers sont impitoyables pour les solitaires.</em>`, null);
+    return;
+  }
+  if (names.length > 10) {
+    openConfirm('Trop de monde à bord !', `<em style="font-family:'Crimson Text',serif;font-size:1rem;line-height:1.7">Le navire ne peut accueillir que <strong style="color:var(--gold)">10 pirates</strong> au maximum — les autres devront rester au port !</em>`, null);
+    return;
+  }
 
   getAllSessions().forEach(s => { if (s.current) { s.current=false; localStorage.setItem(sk(s.id), JSON.stringify(s)); }});
 
@@ -1223,7 +1749,8 @@ function stepButin(delta) {
     const p0 = state.players[0]?.id || '';
     const p1 = state.players[1]?.id || '';
     manche.butins.push({ playerA: p0, playerB: p1 });
-    document.getElementById('alliance-panel').classList.remove('hidden');
+    const ap = document.getElementById('alliance-panel');
+    if (!ap._apOpen) toggleAlliancePanel();
   } else {
     manche.butins.splice(cur-1, 1);
   }
@@ -1239,7 +1766,10 @@ function updateButinDisplay() {
   const n = (state.manches[state.currentRound-1].butins||[]).length;
   document.getElementById('bc').textContent = n;
   document.getElementById('bea').style.display = n > 0 ? 'inline-flex' : 'none';
-  if (n === 0) document.getElementById('alliance-panel').classList.add('hidden');
+  if (n === 0) {
+    const ap = document.getElementById('alliance-panel');
+    if (ap._apOpen) toggleAlliancePanel();
+  }
 }
 
 function recalcManche() {
@@ -1261,17 +1791,59 @@ function renderCards() {
   const ri = state.currentRound-1, N = state.currentRound;
   const manche = state.manches[ri];
 
-  // Header — show rounds 1..maxReached (currentRound is the highest ever reached)
+  // Recalculate all scores + cumuls for this round before rendering
+  manche.joueurs.forEach(jd => {
+    jd.score = calcScore({ ...jd, butins: manche.butins||[] }, N, manche.joueurs);
+  });
+  recalcCumuls(ri);
+
+  // Header — populate custom manche dropdown
   const maxReached = state.maxReached || state.currentRound;
-  const sel = document.getElementById('rs');
-  sel.innerHTML = '';
-  for (let i=1; i<=maxReached; i++) {
-    const o = document.createElement('option');
-    o.value=i; o.textContent=`Manche ${i}`;
-    if (i===N) o.selected=true;
-    sel.appendChild(o);
+  const isPast = N < maxReached;
+
+  // Update dropdown button label
+  const rsCdd = document.getElementById('rs-cdd');
+  if (rsCdd) rsCdd.querySelector('.cdd-label').textContent = `Manche ${N}`;
+
+  // Build dropdown list
+  const rsList = document.getElementById('rs-list');
+  if (rsList) {
+    rsList.innerHTML = Array.from({length: maxReached}, (_, i) => {
+      const mn = i + 1;
+      const isCurrent = mn === maxReached;
+      const isSelected = mn === N;
+      return `<div class="cdd-item${isSelected ? ' selected' : ''}" onclick="cddToggle('rs-cdd');loadRound(${mn})">
+        <span>Manche ${mn}</span>
+        ${isCurrent ? `<span class="cdd-badge">En cours</span>` : ''}
+      </div>`;
+    }).join('');
   }
-  document.getElementById('ri').textContent = `Manche ${N} / ${state.config.manches} · ${state.playerOrder.length} joueurs`;
+
+  // "Retour manche en cours" button — already in DOM, just toggle visibility
+  document.getElementById('btn-retour').classList.toggle('hidden', !isPast);
+
+  // Toggle past-round alert banner
+  const pastAlert = document.getElementById('past-alert');
+  if (pastAlert) pastAlert.classList.toggle('hidden', !isPast);
+
+  // Nav button visibility rules:
+  // prev: hidden on manche 1 (nothing before)
+  // next-nav: only shown when browsing past manches (not on current round)
+  // btn-manche-suiv (#ca): only shown on current active round
+  document.getElementById('btn-prev').classList.toggle('hidden', N === 1);
+  document.getElementById('btn-next-nav').classList.toggle('hidden', !isPast);
+  const btnSuiv = document.getElementById('btn-manche-suiv');
+  const btnTerminer = document.querySelector('#ca .btn-d');
+  if (btnSuiv) {
+    btnSuiv.classList.toggle('hidden', isPast);
+    // On last manche, rename to "Terminer la manche"
+    const isLast = N === state.config.manches;
+    btnSuiv.innerHTML = isLast
+      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 2L13.8 10.2L22 12L13.8 13.8L12 22L10.2 13.8L2 12L10.2 10.2Z"/></svg> Terminer la manche`
+      : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="9,18 15,12 9,6"/><polyline points="3,18 9,12 3,6"/></svg> Manche suivante`;
+    if (btnTerminer) btnTerminer.classList.toggle('hidden', isLast);
+  }
+
   updateButinDisplay();
   renderAlliancePanel();
 
@@ -1282,8 +1854,7 @@ function renderCards() {
     const player = state.players.find(p => p.id===pid);
     const color = pColor(pid);
     const jd = manche.joueurs.find(j => j.id===pid) || emptyJ(pid, player?player.nom:'?');
-    // Always recalc score on render (fixes mise=0 plis=0 → 10*N showing 0)
-    jd.score = calcScore({ ...jd, butins: manche.butins||[] }, N, manche.joueurs);
+    // Score already recalculated above for this round
     const cumul = state.cumuls[pid] ? (state.cumuls[pid][ri]||0) : 0;
     // Score displayed in header = cumul at END of PREVIOUS manche
     const prevCumul = ri > 0 ? (state.cumuls[pid]?.[ri-1] ?? 0) : null;
@@ -1300,7 +1871,6 @@ function renderCards() {
     card.className = 'pc'; card.dataset.pid=pid; card.dataset.pidx=pidx; card.draggable=true;
     card.style.borderColor = color;
 
-    const isPast = N < (state.maxReached||1);
     const expanded = cardsExpanded;
 
     const headerScoreHtml = prevCumul !== null
@@ -1317,7 +1887,6 @@ function renderCards() {
         ${headerScoreHtml}
         <button class="btn btn-d btn-sm" style="padding:3px 7px;margin-left:4px" onclick="removePlayer('${pid}')">${ico('x',12)}</button>
       </div>
-      ${isPast ? `<div class="past-warn">${ico('warning',12)} Manche passée — modification recalcule les cumuls</div>` : ''}
       <div class="pcbody">
         <div class="mise-plis-row">
           ${sField('Mise (0–'+N+')', pid,'mise',jd.mise)}
@@ -1326,12 +1895,12 @@ function renderCards() {
         <div class="ai" id="ai-${pid}"></div>
         <div class="pc-bonus ${expanded?'open':''}">
           <div class="cr">
-            ${sField('Pirates (+20)',pid,'pirate',jd.pirate)}
-            ${sField('Skull King (+40)',pid,'sk',jd.sk)}
+            ${sField(`Pirates (+30)`,pid,'pirate',jd.pirate)}
+            ${sField(`Skull King (+40)`,pid,'sk',jd.sk)}
           </div>
           <div class="cr">
-            ${sField('Sirènes (+30)',pid,'sirene',jd.sirene)}
-            ${sField('Léviathans (+20)',pid,'leviathan',jd.leviathan)}
+            ${sField(`Sirènes (+20)`,pid,'sirene',jd.sirene)}
+            ${sField(`Léviathans (+20)`,pid,'leviathan',jd.leviathan)}
           </div>
           <div class="cr">
             ${sField('7 capturé (−5)',pid,'got7',jd.got7)}
@@ -1344,8 +1913,7 @@ function renderCards() {
           <div style="margin-bottom:7px">
             <label>Rascal</label>
             <div class="rg">
-              <button class="rb ${rv==='null'?'on':''}" data-v="null" onclick="setRascal('${pid}','null',this)">Aucun</button>
-              <button class="rb ${rv==='0'?'on':''}" data-v="0" onclick="setRascal('${pid}','0',this)">0</button>
+              <button class="rb" data-v="null" onclick="setRascal('${pid}','null',this)">Aucun</button>
               <button class="rb ${rv==='10'?'on':''}" data-v="10" onclick="setRascal('${pid}','10',this)">10</button>
               <button class="rb ${rv==='20'?'on':''}" data-v="20" onclick="setRascal('${pid}','20',this)">20</button>
             </div>
@@ -1382,6 +1950,7 @@ function renderCards() {
 
   renderAllianceInfoOnCards();
   if (splitView) renderSidePanel();
+  updateGbInfo();
 }
 
 function sRow(lbl, pid, field, val) {
@@ -1448,22 +2017,18 @@ function stepField(pid, field, delta) {
   jd[field] = nv;
   const el = document.getElementById(`sv-${pid}-${field}`);
   if (el) { if (el.tagName === 'INPUT') el.value = nv; else el.textContent = nv; }
-  jd.score = calcScore({ ...jd, butins: manche.butins||[] }, N);
-  recalcCumuls(ri);          // ← recalcul D'ABORD
-  updateCardScores(pid, ri); // ← affichage APRÈS
+  recalcManche(); // recalcule tous les joueurs (alliance cross-update)
   sched();
 }
 
 function setBonusInput(pid, rawVal) {
   if (!state) return;
-  const N = state.currentRound, ri = N-1;
+  const ri = state.currentRound-1;
   const manche = state.manches[ri];
   const jd = manche.joueurs.find(j=>j.id===pid); if (!jd) return;
   const v = parseInt(rawVal);
   jd.bonus = isNaN(v) ? 0 : Math.max(-999, Math.min(999, v));
-  jd.score = calcScore({ ...jd, butins: manche.butins||[] }, N);
-  recalcCumuls(ri);
-  updateCardScores(pid, ri);
+  recalcManche();
   sched();
 }
 
@@ -1474,11 +2039,9 @@ function setRascal(pid, val, btn) {
   const jd = manche.joueurs.find(j=>j.id===pid); if (!jd) return;
   const cur = jd.rascal===null ? 'null' : String(jd.rascal);
   jd.rascal = (cur===val) ? null : (val==='null' ? null : parseInt(val));
-  const cv = jd.rascal===null ? 'null' : String(jd.rascal);
-  btn.closest('.rg').querySelectorAll('.rb').forEach(b => b.classList.toggle('on', b.dataset.v===cv));
-  jd.score = calcScore({ ...jd, butins: manche.butins||[] }, state.currentRound);
-  recalcCumuls(ri);
-  updateCardScores(pid, ri);
+  const cv = jd.rascal===null ? null : String(jd.rascal);
+  btn.closest('.rg').querySelectorAll('.rb').forEach(b => b.classList.toggle('on', cv !== null && b.dataset.v===cv));
+  recalcManche();
   sched();
 }
 
@@ -1516,8 +2079,35 @@ function loadRound(n) {
   renderCards();
 }
 function prevRound() { if (state && state.currentRound>1) loadRound(state.currentRound-1); }
+function nextRoundNav() {
+  // Only navigate among completed manches, don't advance game
+  if (state && state.currentRound < state.maxReached) loadRound(state.currentRound+1);
+}
 function nextRound() {
   if (!state) return;
+  // Validate: total plis taken cannot exceed N (number of cards dealt this round)
+  const N = state.currentRound;
+  const manche = state.manches[N-1];
+  const totalPlis = manche.joueurs.reduce((sum, j) => sum + (parseInt(j.plis)||0), 0);
+  if (totalPlis > N) {
+    openConfirm(
+      'Argh ! Trop de plis !',
+      `<em style="font-family:'Crimson Text',serif;font-size:1rem;line-height:1.6">
+        Le total des plis saisis (<strong style="color:var(--gold)">${totalPlis}</strong>) dépasse les <strong style="color:var(--gold)">${N}</strong> plis de cette manche, matelot !<br><br>
+        Vérifiez vos comptes avant de lever l'ancre — les mers ne pardonnent pas les erreurs de navigation.
+      </em>`,
+      () => {
+        // Confirm anyway
+        proceedNextRound();
+      },
+      'Continuer quand même'
+    );
+    return;
+  }
+  proceedNextRound();
+}
+
+function proceedNextRound() {
   recalcCumuls(state.currentRound-1);
   if (state.currentRound < state.config.manches) {
     state.currentRound++;
@@ -1526,7 +2116,7 @@ function nextRound() {
     renderCards();
     notify(`Manche ${state.currentRound} chargée`);
   } else {
-    // Last manche — save and show end-game modal (same as saveRound)
+    state.done = true;
     saveGame();
     setTimeout(checkWinner, 100);
   }
@@ -1556,8 +2146,8 @@ function checkWinner() {
   const pts = winners[0].score;
   const n = winners.length;
 
-  const trophyIco = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><polyline points="8,21 12,17 16,21"/><line x1="12" y1="17" x2="12" y2="11"/><path d="M7 4h10l-1 7a5 5 0 01-8 0L7 4z"/><path d="M5 4H3v3a4 4 0 003.5 3.97"/><path d="M19 4h2v3a4 4 0 01-3.5 3.97"/></svg>`;
-  const equalIco = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:6px"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/></svg>`;
+  const trophyIco = ``;
+  const equalIco = ``;
 
   let msg;
   if (n === 1) {
@@ -1574,19 +2164,29 @@ function checkWinner() {
 }
 
 function removePlayer(pid) {
-  if (!state || state.playerOrder.length<=2) { alert('Il faut au minimum 2 joueurs'); return; }
+  if (!state || state.playerOrder.length<=2) { notify('Il faut au minimum 2 pirates à bord !'); return; }
   const p = state.players.find(p=>p.id===pid);
-  openConfirm('Supprimer ?', `Retirer "${p?p.nom:pid}" de la partie ?`, () => {
-    state.players = state.players.filter(p=>p.id!==pid);
-    state.playerOrder = state.playerOrder.filter(id=>id!==pid);
-    state.manches.forEach(m => {
-      m.joueurs = m.joueurs.filter(j=>j.id!==pid);
-      m.butins = (m.butins||[]).filter(b=>b.playerA!==pid&&b.playerB!==pid);
-    });
-    delete state.cumuls[pid];
-    recalcCumuls(0); saveGame(); renderCards();
-    notify(`${p?p.nom:pid} retiré(e)`);
-  });
+  const nom = p ? p.nom : pid;
+  openConfirm(
+    '⚓ Abandon de bord ?',
+    `<em style="font-family:'Crimson Text',serif;font-size:1rem;line-height:1.6">
+      <strong style="color:var(--gold)">${nom}</strong> s'apprête à sauter par-dessus bord.<br>
+      Les mers sont impitoyables pour les déserteurs — ses scores disparaîtront dans les abysses.
+      <br><br><span style="opacity:.7;font-size:.9em">« Un pirate qui quitte l'équipage n'est plus qu'un souvenir. »</span>
+    </em>`,
+    () => {
+      state.players = state.players.filter(p=>p.id!==pid);
+      state.playerOrder = state.playerOrder.filter(id=>id!==pid);
+      state.manches.forEach(m => {
+        m.joueurs = m.joueurs.filter(j=>j.id!==pid);
+        m.butins = (m.butins||[]).filter(b=>b.playerA!==pid&&b.playerB!==pid);
+      });
+      delete state.cumuls[pid];
+      recalcCumuls(0); saveGame(); renderCards();
+      notify(`${nom} a déserté le navire.`);
+    },
+    'Jeter à la mer'
+  );
 }
 
 function dragReorder(si, ti) {
@@ -1608,6 +2208,15 @@ function showClassement() {
   showScreen('classement');
 }
 
+function backFromClassement() {
+  // If game is active (not fully finished), go back to score entry; otherwise go home
+  if (state && state.maxReached < state.config.manches) {
+    showScreen('compte');
+  } else {
+    showScreen('home');
+  }
+}
+
 const PIRATE_QUOTES = [
   '« Les mers lui appartiennent, que Neptune soit son témoin ! »',
   '« Nul ne peut défier son audace sur les flots ! »',
@@ -1618,12 +2227,29 @@ const PIRATE_QUOTES = [
 
 function renderClassement() {
   if (!state) return;
-  const li = state.config.manches - 1;
   const isComplete = state.maxReached >= state.config.manches;
+  // Completed rounds = rounds before the current in-progress one
+  // maxReached is the highest round ever opened (1-based)
+  // If complete: show all. If not: show up to maxReached-1
+  const completedCount = isComplete ? state.config.manches : Math.max(0, (state.maxReached||1) - 1);
+  const scoreIdx = completedCount > 0 ? completedCount - 1 : -1;
+
+  // Info label
+  const infoEl = document.getElementById('cla-info');
+  if (infoEl) {
+    if (isComplete) {
+      infoEl.textContent = `Partie terminée — ${state.actualPlayed || state.config.manches} manche${(state.actualPlayed || state.config.manches) > 1 ? 's' : ''}`;
+    } else if (completedCount === 0) {
+      infoEl.textContent = `Aucune manche terminée — scores à zéro`;
+    } else {
+      infoEl.textContent = `Scores après ${completedCount} manche${completedCount>1?'s':''} terminée${completedCount>1?'s':''} · Manche ${(state.maxReached||1)} en cours`;
+    }
+  }
+
   const rawScores = state.playerOrder.map(pid => ({
     pid, color: pColor(pid),
     nom: (state.players.find(p=>p.id===pid)||{}).nom||'?',
-    score: state.cumuls[pid] ? (state.cumuls[pid][li]||0) : 0
+    score: scoreIdx >= 0 ? (state.cumuls[pid]?.[scoreIdx] ?? 0) : 0
   }));
   const ranked = computeRanks(rawScores);
 
@@ -1713,8 +2339,15 @@ const CHART_SCALES = {
 
 function renderChart() {
   if (chart) { chart.destroy(); chart=null; }
-  const li = lastPlayedIdx();
-  const count = li+1;
+  const isComplete = state.maxReached >= state.config.manches;
+  // For early-terminated games, use actualPlayed if set, else maxReached
+  let count;
+  if (isComplete && state.actualPlayed && state.actualPlayed < state.config.manches) {
+    count = state.actualPlayed;
+  } else {
+    count = isComplete ? state.config.manches : Math.max(0, (state.maxReached||1) - 1);
+  }
+  if (count === 0) return;
   const labels = Array.from({length:count},(_,i)=>'M'+(i+1));
   const datasets = state.playerOrder.map(pid => {
     const p = state.players.find(p=>p.id===pid);
@@ -1742,6 +2375,27 @@ function recommencer() {
   });
 }
 
+function terminerPartie() {
+  if (!state) return;
+  const msg = `Les voiles sont ferlées, l'ancre est jetée. La traversée prend fin ici.
+    Aucun marin ne peut revenir en arrière — les eaux restantes seront abandonnées aux profondeurs.
+    <br><br><em style="color:var(--text);font-size:.9em;opacity:.9">« Ce qui est écrit dans le grand livre des mers ne s'efface jamais. »</em>`;
+  openConfirm(
+    'Terminer la partie ?',
+    msg,
+    () => {
+      // Track actual rounds played before forced completion (for graph)
+      state.actualPlayed = state.currentRound;
+      state.maxReached = state.config.manches;
+      state.done = true;
+      saveGame();
+      showClassement();
+      notify('La traversée est terminée — que les mers vous soient clémentes !');
+    },
+    'Jeter l\'ancre'
+  );
+}
+
 function quitter() {
   if (state) saveGame();
   setTimeout(() => showScreen('home'), 150);
@@ -1759,7 +2413,13 @@ function quitter() {
     c.appendChild(r);
   }
   listSessions();
+  renumberPI();
 })();
+
+window.addEventListener('resize', () => {
+  const home = document.getElementById('home');
+  if (home && !home.classList.contains('hidden')) { setupSessionScroll(); updatePisLayout(); }
+});
 
 // ──────────────────────────────────────────────────────────────
 //  CROSS-TAB LIVE SYNC
@@ -1812,17 +2472,22 @@ function runDevTests() {
   };
 
   // Shorthand: build a minimal player data object for calcScore
-  const J = (mise, plis, {p=0,sk=0,s=0,lev=0,g8=0,g7=0,g14c=0,g14b=0,bon=0,rascal=null,id='',butins=[]}={}) =>
-    ({mise,plis,pirate:p,sk,sirene:s,leviathan:lev,got8:g8,got7:g7,got14color:g14c,got14black:g14b,bonus:bon,rascal,id,butins});
+  // NOTE: does NOT include 'id' — set it explicitly when needed
+  const J = (mise, plis, {p=0,sk=0,s=0,lev=0,g8=0,g7=0,g14c=0,g14b=0,bon=0,rascal=null,butins=[]}={}) =>
+    ({mise,plis,pirate:p,sk,sirene:s,leviathan:lev,got8:g8,got7:g7,got14color:g14c,got14black:g14b,bonus:bon,rascal,butins});
 
   console.group('Skull King DEV TESTS v3');
 
-  // ── MAPPING des bonusEvents → champs app ──────────────────────
-  // pirateCapturesMermaid (+20)  → pirate (p)
-  // skullCapturesPirate   (+30)  → sirene (s)
-  // mermaidCapturesSkull  (+40)  → sk
-  // standard14            (+10)  → got14color (g14c)
-  // black14               (+20)  → got14black (g14b)
+  // ── FIELD MAPPING (game data → calcScore fields) ───────────────────
+  // The 'sirene' field tracks "Skull King captures pirate" event (+20 each, max 2)
+  // The 'sk'     field tracks "mermaid captures Skull King" event (+40, max 1)
+  // The 'pirate' field tracks "pirate captures mermaid"     event (+30 each, max 7)
+  // The 'leviathan' field tracks leviathan bonus (+20 each, max 3)
+  // In test helper J(), shorthand keys map as: p→pirate, sk→sk, s→sirene, lev→leviathan
+  // pirateCapturesMermaid (+30)  → pirate (p), max 7
+  // skullCapturesPirate   (+20)  → sirene (s), max 2
+  // mermaidCapturesSkull  (+40)  → sk,          max 1
+  // leviathan bonus       (+20)  → leviathan (lev), max 3
 
   console.groupCollapsed('── BASE (T01–T11) ──');
 
@@ -1858,28 +2523,28 @@ function runDevTests() {
   assert('T13', calcScore(J(2,2,{g14b:1}),4), 60, 'black14×1');
   // T14: standard14×2 + black14×1 → 60+20+20=100
   assert('T14', calcScore(J(3,3,{g14c:2,g14b:1}),5), 100, 'standard14×2 + black14×1');
-  // T15: pirateCapturesMermaid×1 → 20+20=40
-  assert('T15', calcScore(J(1,1,{p:1}),6), 40, 'pirateCapturesMermaid×1');
-  // T16: pirateCapturesMermaid×2 → 20+40=60
-  assert('T16', calcScore(J(1,1,{p:2}),6), 60, 'pirateCapturesMermaid×2');
-  // T17: skullCapturesPirate×1 → 20+30=50
-  assert('T17', calcScore(J(1,1,{s:1}),6), 50, 'skullCapturesPirate×1');
-  // T18: skullCapturesPirate×3 → 40+90=130
-  assert('T18', calcScore(J(2,2,{s:3}),8), 130, 'skullCapturesPirate×3');
+  // T15: pirateCapturesMermaid×1 → 20+30=50
+  assert('T15', calcScore(J(1,1,{p:1}),6), 50, 'pirateCapturesMermaid×1');
+  // T16: pirateCapturesMermaid×2 → 20+60=80
+  assert('T16', calcScore(J(1,1,{p:2}),6), 80, 'pirateCapturesMermaid×2');
+  // T17: Skull King captures 1 pirate → base 20 + 1×20 bonus = 40
+  assert('T17', calcScore(J(1,1,{s:1}),6), 40, 'skullCapturesPirate×1');
+  // T18: Skull King captures 2 pirates (max 2) → base 40 + 2×20=40 bonus = 80
+  assert('T18', calcScore(J(2,2,{s:2}),8), 80, 'skullCapturesPirate×2 (max)');
   // T19: mermaidCapturesSkull×1 → 20+40=60
   assert('T19', calcScore(J(1,1,{sk:1}),8), 60, 'mermaidCapturesSkull×1');
   // T20: mermaidCapturesSkull×1 + standard14×1 → 20+40+10=70
   assert('T20', calcScore(J(1,1,{sk:1,g14c:1}),8), 70, 'mermaidCapturesSkull×1 + standard14×1');
-  // T21: standard14×2 + black14×1 + pirateCapturesMermaid×1 → 80+20+20+20=140
-  assert('T21', calcScore(J(4,4,{g14c:2,g14b:1,p:1}),9), 140, 'standard14×2 + black14×1 + pirateCapturesMermaid×1');
+  // T21: standard14×2 + black14×1 + pirateCapturesMermaid×1 → 80+20+20+30=150
+  assert('T21', calcScore(J(4,4,{g14c:2,g14b:1,p:1}),9), 150, 'standard14×2 + black14×1 + pirateCapturesMermaid×1');
   // T22: bid raté → tous les bonus tombent → -10
   assert('T22', calcScore(J(4,3,{g14c:2,g14b:1,p:1}),9), -10, 'bid raté bonus=0');
-  // T23: mermaidCapturesSkull×1 + standard14×1 (SK ne gagne pas le pli) → 20+40+10=70
+  // T23: mermaidCapturesSkull×1 + standard14×1 → 20+40+10=70
   assert('T23', calcScore(J(1,1,{sk:1,g14c:1}),5), 70, 'sirène capture SK + 14 couleur');
-  // T24: pirateCapturesMermaid×2 + black14×1 → 20+40+20=80
-  assert('T24', calcScore(J(1,1,{p:2,g14b:1}),5), 80, 'pirateCapturesMermaid×2 + black14×1');
-  // T25: skullCapturesPirate×2 + standard14×1 → 20+60+10=90
-  assert('T25', calcScore(J(1,1,{s:2,g14c:1}),5), 90, 'skullCapturesPirate×2 + standard14×1');
+  // T24: pirateCapturesMermaid×2 + black14×1 → 20+60+20=100
+  assert('T24', calcScore(J(1,1,{p:2,g14b:1}),5), 100, 'pirateCapturesMermaid×2 + black14×1');
+  // T25: skullCapturesPirate×2 + standard14×1 → 20+40+10=70
+  assert('T25', calcScore(J(1,1,{s:2,g14c:1}),5), 70, 'skullCapturesPirate×2 + standard14×1');
 
   console.groupEnd();
   console.groupCollapsed('── SCÉNARIO S1 — 3 joueurs 4 manches ──');
@@ -1892,16 +2557,16 @@ function runDevTests() {
     config:{manches:4},
     manches:[
       {N:1,butins:[],joueurs:[
-        {id:'a',...J(1,1)},{id:'b',...J(0,0)},{id:'c',...J(0,0)},
+        {...J(1,1),id:'a'},{...J(0,0),id:'b'},{...J(0,0),id:'c'},
       ]},
       {N:2,butins:[],joueurs:[
-        {id:'a',...J(0,1)},{id:'b',...J(1,1,{g14c:1})},{id:'c',...J(1,0)},
+        {...J(0,1),id:'a'},{...J(1,1,{g14c:1}),id:'b'},{...J(1,0),id:'c'},
       ]},
       {N:3,butins:[],joueurs:[
-        {id:'a',...J(2,2,{g14b:1})},{id:'b',...J(0,0)},{id:'c',...J(1,1)},
+        {...J(2,2,{g14b:1}),id:'a'},{...J(0,0),id:'b'},{...J(1,1),id:'c'},
       ]},
       {N:4,butins:[],joueurs:[
-        {id:'a',...J(1,1)},{id:'b',...J(2,2,{sk:1})},{id:'c',...J(1,1)},
+        {...J(1,1),id:'a'},{...J(2,2,{sk:1}),id:'b'},{...J(1,1),id:'c'},
       ]},
     ],
     cumuls:{a:[0,0,0,0],b:[0,0,0,0],c:[0,0,0,0]}
@@ -1945,8 +2610,8 @@ function runDevTests() {
   // Scores par joueur pour la manche N=6
   // J1: bid=1/1 → +20          J2: bid=0/0 → +60
   // J3: bid=2/2 + black14 → +60 J4: bid=1/0 → -10
-  // J5: bid=0/1 → -60           J6: bid=1/1 + pirateCapturesMermaid×1 → +40
-  // J7: bid=1/1 + skullCapturesPirate×2 → +80  J8: bid=0/0 → +60
+  // J5: bid=0/1 → -60           J6: bid=1/1 + pirateCapturesMermaid×1 → 20+30=+50
+  // J7: bid=1/1 + skullCapturesPirate×2 → 20+40=+60  J8: bid=0/0 → +60
   // J9: bid=0/0 → +60           J10: bid=0/0 → +60
 
   const s2 = [
@@ -1962,9 +2627,9 @@ function runDevTests() {
     {id:'j10',mise:0,plis:0},
   ].map(j => ({...J(j.mise,j.plis,{p:j.pirate||0,s:j.sirene||0,g14b:j.got14black||0}), id:j.id}));
 
-  const s2Expected = [20, 60, 60, -10, -60, 40, 80, 60, 60, 60];
+  const s2Expected = [20, 60, 60, -10, -60, 50, 60, 60, 60, 60];
   const s2StartTotals = [0, 10, -20, 50, 0, 30, 40, -10, 0, 100];
-  const s2FinalTotals = [20, 70, 40, 40, -60, 70, 120, 50, 60, 160];
+  const s2FinalTotals = [20, 70, 40, 40, -60, 80, 100, 50, 60, 160];
 
   s2.forEach((jd, i) => {
     const score = calcScore(jd, 6);
