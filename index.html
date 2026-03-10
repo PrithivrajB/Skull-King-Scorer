@@ -1436,8 +1436,8 @@ function calcScore(data, N, allJoueurs=[]) {
   let bon = 0;
   if (ok) {
     if (mise === 0 && plis === 0) {
-      // Bid zéro réussi : seul le bonus manuel compte (pas de bonus spéciaux de cartes)
-      bon += bonus;
+      // Bid zéro réussi : bonus manuel + léviathan (exception : seul bonus valide sur mise=0)
+      bon += lev*20 + bonus;
     } else {
       bon += pirate*30 + sk_v*40 + sirene*20 + lev*20;
       bon += got8*5 - got7*5;
@@ -1445,15 +1445,20 @@ function calcScore(data, N, allJoueurs=[]) {
     }
 
     // Alliance bonus : +20 chacun SEULEMENT si les 2 joueurs ont rempli leur contrat
-    // Calcul indépendant pour chaque alliance (multi-butins supporté)
+    // EXCEPTION : si les 2 joueurs ont mise=0 et plis=0, le bonus ne s'applique pas (règle de protection)
     const butins = data.butins || [];
     const pid = data.id;
+    const isBidZero = d => (parseInt(d.mise)||0)===0 && (parseInt(d.plis)||0)===0;
     if (pid && ok) {
       butins.forEach(a => {
         if (a.playerA===pid || a.playerB===pid) {
           const partnerId = a.playerA===pid ? a.playerB : a.playerA;
           const partner = allJoueurs.find(j => j.id===partnerId);
-          if (partner && bidOk(partner)) bon += 20;  // A OK + B OK → +20 ; sinon 0
+          if (partner && bidOk(partner)) {
+            // Protection : pas de bonus si les deux sont en bid=0 réussi
+            const bothBidZero = isBidZero(data) && isBidZero(partner);
+            if (!bothBidZero) bon += 20;
+          }
         }
       });
     }
@@ -3298,7 +3303,7 @@ window.addEventListener('storage', e => {
 // ──────────────────────────────────────────────────────────────
 /* ==== DEV TESTS START ==== */
 // ──────────────────────────────────────────────────────────────
-const ENABLE_DEV_TESTS = false;
+const ENABLE_DEV_TESTS = true;
 
 function runDevTests() {
   // ── helpers ──────────────────────────────────────────────────
@@ -3475,6 +3480,64 @@ function runDevTests() {
     assert(`S2-J${i+1}-round`, score, s2Expected[i], `J${i+1} bid=${jd.mise} tricks=${jd.plis}`);
     assert(`S2-J${i+1}-total`, s2StartTotals[i] + score, s2FinalTotals[i], `J${i+1} total final`);
   });
+
+  console.groupEnd();
+  console.groupCollapsed('── LÉVIATHAN (T26–T31) ──');
+
+  // T26: bid=1 réussi + 1 léviathan → 20+20=40
+  assert('T26', calcScore(J(1,1,{lev:1}),5), 40, 'bid réussi + léviathan×1');
+  // T27: bid=2 réussi + 2 léviathans → 40+40=80
+  assert('T27', calcScore(J(2,2,{lev:2}),5), 80, 'bid réussi + léviathan×2');
+  // T28: bid raté + 1 léviathan → -10 (bonus ignoré)
+  assert('T28', calcScore(J(2,1,{lev:1}),5), -10, 'bid raté → léviathan ignoré');
+  // T29: bid=0 réussi + 1 léviathan → 50+20=70 (exception léviathan sur mise=0)
+  assert('T29', calcScore(J(0,0,{lev:1}),5), 70, 'bid=0 réussi + léviathan×1 (exception)');
+  // T30: bid=0 réussi + 2 léviathans → 50+40=90
+  assert('T30', calcScore(J(0,0,{lev:2}),5), 90, 'bid=0 réussi + léviathan×2 (exception)');
+  // T31: bid=0 raté + 1 léviathan → -50 (pas de bonus)
+  assert('T31', calcScore(J(0,1,{lev:1}),5), -50, 'bid=0 raté → léviathan ignoré');
+
+  console.groupEnd();
+  console.groupCollapsed('── BUTIN / ALLIANCE (T32–T39) ──');
+
+  // Helper alliance: builds two players in an alliance
+  const makeAlliance = (idA, mA, plA, idB, mB, plB) => {
+    const butin = { playerA: idA, playerB: idB };
+    const a = { ...J(mA, plA), id: idA, butins: [butin] };
+    const b = { ...J(mB, plB), id: idB, butins: [butin] };
+    return [a, b];
+  };
+
+  // T32: A ok (bid=1), B ok (bid=1) → bonus +20 chacun
+  {
+    const [a,b] = makeAlliance('a',1,1,'b',1,1);
+    assert('T32-A', calcScore(a,5,[a,b]), 40, 'alliance A ok+ok → +20 bonus');
+    assert('T32-B', calcScore(b,5,[a,b]), 40, 'alliance B ok+ok → +20 bonus');
+  }
+  // T33: A ok, B raté → pas de bonus pour A
+  {
+    const [a,b] = makeAlliance('a',1,1,'b',2,1);
+    assert('T33-A', calcScore(a,5,[a,b]), 20, 'alliance A ok, B raté → pas de bonus');
+    assert('T33-B', calcScore(b,5,[a,b]), -10, 'alliance B raté → pas de bonus');
+  }
+  // T34: A bid=0 réussi, B bid=1 réussi → bonus appliqué (+20 chacun)
+  {
+    const [a,b] = makeAlliance('a',0,0,'b',1,1);
+    assert('T34-A', calcScore(a,5,[a,b]), 70, 'alliance A bid=0 ok, B bid=1 ok → +20 bonus (base 50+20)');
+    assert('T34-B', calcScore(b,5,[a,b]), 40, 'alliance B bid=1 ok, A bid=0 ok → +20 bonus');
+  }
+  // T35: A bid=0 réussi, B bid=0 réussi → PROTECTION, pas de bonus
+  {
+    const [a,b] = makeAlliance('a',0,0,'b',0,0);
+    assert('T35-A', calcScore(a,5,[a,b]), 50, 'alliance protection: A+B bid=0 ok → pas de bonus');
+    assert('T35-B', calcScore(b,5,[a,b]), 50, 'alliance protection: A+B bid=0 ok → pas de bonus');
+  }
+  // T36: A bid=0 raté, B bid=1 ok → pas de bonus (A a raté)
+  {
+    const [a,b] = makeAlliance('a',0,1,'b',1,1);
+    assert('T36-A', calcScore(a,5,[a,b]), -50, 'alliance A bid=0 raté → pas de bonus');
+    assert('T36-B', calcScore(b,5,[a,b]), 20,  'alliance B ok mais A raté → pas de bonus');
+  }
 
   console.groupEnd();
   console.groupCollapsed('── VALIDATIONS TRANSVERSES ──');
