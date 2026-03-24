@@ -24,7 +24,10 @@ Application web de décompte de points pour le jeu de cartes **Skull King**. Fon
 14. [Tests intégrés](#tests-intégrés)
 15. [Ajouter une feature](#ajouter-une-feature)
 16. [Charte graphique](#charte-graphique)
-17. [Limites connues](#limites-connues)
+17. [Joueurs dynamiques](#joueurs-dynamiques)
+18. [Fin de partie et modification](#fin-de-partie-et-modification)
+19. [Fonctionnalité de partage](#fonctionnalité-de-partage-obtenir-un-lien)
+20. [Limites connues](#limites-connues)
 
 ---
 
@@ -34,12 +37,14 @@ Application web de décompte de points pour le jeu de cartes **Skull King**. Fon
 |---|---|
 | **HTML/CSS/JS vanille** | Architecture complète — pas de framework |
 | **Chart.js** (CDN) | Graphique de progression des scores |
+| **qrcodejs** (CDN) | Génération de QR codes côté navigateur |
 | **Google Fonts** | Cinzel Decorative, Cinzel, Crimson Text |
-| **localStorage** | Persistance des parties entre sessions |
+| **localStorage** | Persistance des parties et cache des liens partagés |
 
 Dépendances CDN :
 ```
 https://cdn.jsdelivr.net/npm/chart.js
+https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js
 https://fonts.googleapis.com/css2?family=Cinzel+Decorative...
 ```
 
@@ -89,7 +94,9 @@ showScreen('classement') // classement
   "config": { "manches": 8 },
   "playerOrder": ["p1", "p2", "p3"],
   "players": [
-    { "id": "p1", "nom": "Jack", "color": "#e8a020" }
+    { "id": "p1", "nom": "Jack", "color": "#e8a020", "joinedAt": 1 },
+    { "id": "p2", "nom": "Lee",  "color": "#ef4444", "joinedAt": 3 },
+    { "id": "p3", "nom": "Sam",  "color": "#2563eb", "leftAt": 5 }
   ],
   "manches": [
     {
@@ -111,7 +118,9 @@ showScreen('classement') // classement
   "cumuls": {
     "p1": [60, 130, 190]
   },
-  "current": true
+  "current": true,
+  "actualPlayed": 8,
+  "done": true
 }
 ```
 
@@ -123,9 +132,12 @@ showScreen('classement') // classement
 | `maxReached` | int | Manche la plus haute jamais atteinte |
 | `done` | bool | `true` uniquement après clic "Voir le classement" sur la modale de fin |
 | `playerOrder` | string[] | Ordre d'affichage des cartes (drag-reorder) |
-| `cumuls[pid][i]` | int | Score cumulé du joueur `pid` après la manche `i` |
+| `cumuls[pid][i]` | int\|null | Score cumulé après la manche `i` ; `null` avant `joinedAt` (Option B — courbe démarre à l'arrivée) |
 | `butins` | Alliance[] | Alliances actives pour cette manche |
 | `rascal` | null \| 10 \| 20 | Valeur Rascal (null = inactif) |
+| `joinedAt` | int? | Manche d'arrivée si ajouté en cours de partie |
+| `leftAt` | int? | Manche d'abandon (soft delete) ; absent = toujours actif |
+| `actualPlayed` | int? | Nombre de manches comptées au classement final (≤ maxReached) |
 
 ---
 
@@ -380,7 +392,8 @@ Stylisée à la charte : 4 px de large, quasi-invisible (`rgba(gold, .18)`), lé
 | `renderAllianceInfoOnCards()` | Affiche les alliances sur chaque carte |
 | `renderAlliancePanel()` | Reconstruit entièrement les lignes du panneau butin |
 | `renderMancheStats()` | Met à jour la barre de chips MISES/PLIS/BONUS/MALUS |
-| `renderClassement()` | Remplit le tableau de classement + bannière victoire |
+| `renderClassement()` | Remplit le tableau de classement + bannière victoire + abandonnés |
+| `editFinishedGame()` | Navigue vers `maxReached` en mode modification depuis le classement |
 | `renderChart()` | Instancie/recrée le graphique Chart.js |
 | `renderSidePanel()` | Met à jour le panneau classement inline (vue séparée) |
 
@@ -404,6 +417,7 @@ Stylisée à la charte : 4 px de large, quasi-invisible (`rgba(gold, .18)`), lé
 | `prevRound()` | Recule d'une manche |
 | `saveRound()` | Sauvegarde + recalcule les cumuls |
 | `checkWinner()` | Calcule et affiche la modale de fin de partie |
+| `terminerPartie()` | Ouvre la modale "Mouiller l'ancre" avec la checkbox manche en cours |
 
 ### Sessions
 
@@ -415,12 +429,13 @@ Stylisée à la charte : 4 px de large, quasi-invisible (`rgba(gold, .18)`), lé
 | `deleteSession(id)` | Supprime une partie |
 | `getAllSessions()` | Liste toutes les clés `skull_session_*` |
 | `loadFinished(id)` | Ouvre une partie terminée en lecture seule |
+| `_refreshDoneBanner()` | Affiche/masque le bandeau et les boutons selon `state.done` |
 
 ---
 
 ## Tests intégrés
 
-Le fichier contient **~68 assertions** organisées en groupes, désactivées par défaut (`ENABLE_DEV_TESTS = false`).
+Le fichier contient **~100 assertions** organisées en groupes, désactivées par défaut (`ENABLE_DEV_TESTS = false`).
 
 ```js
 // Activer en passant ENABLE_DEV_TESTS = true et en rechargeant la page
@@ -437,6 +452,8 @@ Le fichier contient **~68 assertions** organisées en groupes, désactivées par
 | SCÉNARIO S1 | 14 asserts | 3 joueurs, 4 manches, cumuls intermédiaires |
 | SCÉNARIO S2 | 20 asserts | 10 joueurs, N=6, totaux de départ |
 | VALIDATIONS | V01–V05 | cumuls négatifs, rascal bid=0, somme plis |
+| UI DONE GAME | D01–D11 | boutons masqués sur done, badge "En cours" absent |
+| JOUEURS DYN. | J01–J16 | joinedAt nulls, leftAt figeage, pWasActiveAt, hard delete M1 |
 
 ---
 
@@ -475,11 +492,144 @@ Toutes les couleurs passent par les variables CSS dans `:root`. Modifier `--gold
 
 Polices : **Cinzel Decorative** (titres/scores), **Cinzel** (labels/boutons), **Crimson Text** (corps).
 
-Couleurs joueurs (10 max) :
+| # | Couleur | Hex |
+|---|---|---|
+| 1 | Jaune ambre | `#fbbf24` |
+| 2 | Rouge vif | `#ef4444` |
+| 3 | Bleu roi | `#2563eb` |
+| 4 | Vert émeraude | `#059669` |
+| 5 | Violet profond | `#7c3aed` |
+| 6 | Rose bonbon | `#ec4899` |
+| 7 | Orange | `#f97316` |
+| 8 | Cyan turquoise | `#22d3ee` |
+| 9 | Vert lime | `#b4f020` |
+| 10 | Violet clair | `#c4b5fd` |
+
+Couleurs joueurs (10 max) — code source :
 ```js
 ['#fbbf24','#ef4444','#2563eb','#059669','#7c3aed',
  '#ec4899','#f97316','#22d3ee','#b4f020','#c4b5fd']
 ```
+
+---
+
+## Joueurs dynamiques
+
+### Ajout en cours de partie
+
+Un joueur peut rejoindre à n'importe quelle manche. `joinedAt` est stocké sur l'objet player.
+
+```js
+// Cumuls avant joinedAt = null (pas de point sur la courbe)
+// Cumuls à partir de joinedAt = calculés normalement
+state.cumuls[pid] = state.manches.map((_, i) => i < joinedAt - 1 ? null : 0);
+```
+
+La courbe du graphique commence directement à la manche d'arrivée (aucune valeur à 0 avant).
+
+### Abandon en cours de partie
+
+Un joueur supprimé après la manche 1 est **soft-deleté** : `leftAt = currentRound` est positionné sur l'objet player, ses scores passés sont conservés, ses données futures sont mises à zéro.
+
+```
+// Suppression manche 1 → hard delete (disparaît totalement)
+// Suppression manche N > 1 → soft delete, leftAt = N
+```
+
+`recalcCumuls` fige le cumul à `leftAt - 2` (dernière manche jouée) pour toutes les manches suivantes.
+
+### Affichage
+
+| Contexte | Joueur actif | Joueur abandonné |
+|---|---|---|
+| Cartes de saisie | Affiché sur manches actives uniquement | Caché dès `leftAt` |
+| Graphique | Courbe pleine | Courbe en pointillés, s'arrête à `leftAt - 1` |
+| Classement | Rang normal | En bas, opacité réduite, `(Déserteur)` à côté du nom |
+| Badges de rang sur cartes | Oui | Exclu du calcul de rang |
+| Image générée | Idem classement | Idem classement |
+
+### Fonctions concernées
+
+| Fonction | Description |
+|---|---|
+| `addPlayerNamed(nom)` | Ajoute un joueur avec `joinedAt = currentRound` |
+| `removePlayer(pid)` | Hard delete (M1) ou soft delete (M>1) avec `leftAt` |
+| `pIsAbandoned(pid)` | Retourne `true` si `leftAt` est défini |
+| `pWasActiveAt(pid, manche)` | Retourne `true` si le joueur était présent à cette manche |
+| `recalcCumuls(from)` | Respecte `joinedAt` (null avant) et `leftAt` (figeage après) |
+| `getStandings(ri)` | Exclut les abandonnés du calcul de rang |
+
+---
+
+## Fin de partie et modification
+
+### Mouiller l'ancre
+
+La modale de fin propose une checkbox **"Prendre en compte la manche en cours"** (décochée par défaut).
+
+| Checkbox | Comportement |
+|---|---|
+| ☐ Décochée | `actualPlayed = currentRound - 1` — manche en cours ignorée |
+| ☑ Cochée | `actualPlayed = currentRound` — manche en cours incluse |
+
+`state.done = true` est positionné uniquement après confirmation.
+
+### Bandeau "Partie terminée"
+
+Un bandeau doré s'affiche en haut de l'écran de saisie quand `state.done === true`. Il indique que les saisies restent modifiables et propose un lien rapide vers le classement.
+
+### Boutons masqués sur partie terminée
+
+Sur une partie terminée, les boutons suivants sont automatiquement masqués dans l'écran de saisie : **Prochaine traversée / Fin du voyage**, **Classement**, **Mouiller l'ancre**, **En cours** (navigation).
+
+### Modifier une partie terminée
+
+Le bouton **"Modifier les saisies"** apparaît sur l'écran de résultats d'une partie terminée. Il navigue vers `maxReached` dans l'écran de saisie avec toutes les modifications actives.
+
+---
+
+## Fonctionnalité de partage (Obtenir un lien)
+
+Le bouton **"Obtenir un lien"** dans le menu Partager génère une image de la partie, l'uploade vers [im.ge](https://im.ge) et affiche une modale avec un QR code et un lien copiable.
+
+### Flux
+
+1. Clic → ferme le menu → overlay de chargement pirate
+2. `buildResultCanvas()` génère le canvas haute résolution
+3. Empreinte de la partie calculée depuis `state.id + cumuls` → vérification du cache
+4. Si URL valide trouvée en cache (< 3h) → réutilisée directement, pas de re-upload
+5. Sinon → image redimensionnée en JPEG → upload vers im.ge (expiration 3h)
+6. Succès → modale avec QR code + URL directe copiable
+7. Erreur réseau / serveur → toast d'erreur, retry automatique x3
+
+### Upload
+
+L'image est réduite avant l'envoi pour limiter le poids (le canvas haute résolution est conservé pour le téléchargement local). La requête passe par un proxy CORS car le fichier ouvert en `file://` génère une origine nulle refusée par l'API.
+
+La réponse exploite le champ `image.image.url` qui retourne l'URL directe vers le fichier PNG hébergé.
+
+### Cache
+
+L'URL générée est mise en cache dans le localStorage avec un timestamp. À chaque appel, si l'URL existe et a moins de 3 heures, elle est réutilisée sans nouvel upload. Au-delà, une nouvelle image est générée et uploadée.
+
+### Fonctions
+
+| Fonction | Description |
+|---|---|
+| `obtainLink()` | Point d'entrée — ferme le menu et lance le flux de partage |
+| `_runShareFlow()` | Orchestre la génération, la vérification du cache et l'upload |
+| `_uploadToImge(dataUrl, retries)` | Upload vers im.ge avec retry x3 et redimensionnement |
+| `_showLinkModal(url)` | Génère le QR code (qrcodejs) et ouvre la modale |
+| `closeShareLinkModal()` | Ferme la modale avec animation |
+| `copyShareLink()` | Copie l'URL via Clipboard API, fallback sélection manuelle |
+
+### Overlay de chargement
+
+Reprend le style de l'écran d'accueil : crâne animé (`skullBob`), titre "Skull King" avec glow, sous-titre "◆ SCORER ◆", spinner, message pirate en italique pulsé (`pulseGold`).
+
+Messages selon la phase :
+- Génération → *"Les cartes sont jetées… le destin se trace."*
+- Upload → *"Les vents portent le butin vers les sept mers…"*
 
 ---
 
@@ -489,4 +639,5 @@ Couleurs joueurs (10 max) :
 - **Max 10 joueurs** : contrainte des couleurs prédéfinies.
 - **localStorage** : limité à ~5 Mo par domaine. Des centaines de parties peuvent être sauvegardées.
 - **Pas de PWA** : peut être ajouté avec un Service Worker et un `manifest.json`.
-- **"Obtenir un lien"** : placeholder — fonctionnalité non encore implémentée.
+- **Partage hors-ligne** : la fonctionnalité "Obtenir un lien" nécessite une connexion internet pour l'upload de l'image.
+- **Tracking Prevention (Edge/Safari)** : certains navigateurs bloquent l'accès au localStorage depuis une origine `null` (`file://`). Le cache de partage est alors ignoré, forçant un re-upload à chaque appel.
